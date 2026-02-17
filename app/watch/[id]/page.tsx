@@ -1,6 +1,6 @@
-import { ASL_MAP } from "@/lib/asl-map";
-import { fetchVideoMeta } from "@/lib/youtube";
-import { WatchClient } from "@/components/WatchClient";
+import { ASL_MAP } from "../../../lib/asl-map";
+import { fetchVideoMeta } from "../../../lib/youtube";
+import { WatchClient } from "../../../components/WatchClient";
 
 export default async function WatchPage({
   params,

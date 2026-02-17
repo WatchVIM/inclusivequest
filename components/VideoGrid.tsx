@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { YtItem } from "@/lib/youtube";
+import type { YtItem } from "../lib/youtube";
 
 export function VideoGrid({ items }: { items: YtItem[] }){
   return (

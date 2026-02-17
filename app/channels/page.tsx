@@ -1,6 +1,6 @@
-import { CHANNEL_IDS } from "@/lib/channels";
-import { fetchChannelUploads, type YtItem } from "@/lib/youtube";
-import { VideoGrid } from "@/components/VideoGrid";
+import { CHANNEL_IDS } from "../../lib/channels";
+import { fetchChannelUploads, type YtItem } from "../../lib/youtube";
+import { VideoGrid } from "../../components/VideoGrid";
 
 export const dynamic = "force-dynamic";
 

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { YoutubePlayer } from "@/components/YoutubePlayer";
-import { AslPanel } from "@/components/AslPanel";
+import { YoutubePlayer } from "./YoutubePlayer";
+import { AslPanel } from "./AslPanel";
 
 export function WatchClient({
   videoId,
