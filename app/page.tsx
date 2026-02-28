@@ -14,15 +14,13 @@ export default async function Home() {
   const uploads: YtItem[] = await fetchChannelUploads(channel, 40);
 
   const hero = uploads?.[0];
-  const more = uploads?.slice(1, 10) ?? []; // 9 items = 3 rows of 3
+  // 18 items = 6 rows of 3 (requested: 3 per row)
+  const more = uploads?.slice(1, 19) ?? [];
 
   return (
     <div className="pt-6">
       {/* HERO */}
       <section className="relative overflow-hidden rounded-[26px] border border-white/10 bg-white/5 p-4 md:p-6">
-        <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-brandRed/20 blur-3xl" />
-        <div className="absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-brandBlue/20 blur-3xl" />
-
         <div className="relative flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
@@ -90,6 +88,12 @@ export default async function Home() {
 
       {/* MORE VIDEOS: 3 per row */}
       <VideoRow title="More Videos" items={more} />
+
+      <div className="mt-4">
+        <Link href="/channels" className="text-sm font-black text-white/80 hover:text-white">
+          View all videos →
+        </Link>
+      </div>
 
       {/* CTA */}
       <section className="mt-10 iq-card p-6">

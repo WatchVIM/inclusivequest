@@ -15,7 +15,7 @@ export function VideoRow({
     <section className="mt-10">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-black tracking-tight">{title}</h2>
-        <span className="text-xs font-bold text-white/50">3-up grid</span>
+        <span className="text-xs font-bold text-white/50">Curated</span>
       </div>
 
       {/* 3 videos per row on desktop (Netflix/Hulu feel) */}
