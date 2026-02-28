@@ -1,4 +1,4 @@
 export const CHANNEL_IDS: string[] = [
-  // Use a YouTube handle or UC... channel ID
-  "@InclusiveQuest",
+  // Pull videos from the channel handle below (or replace with a UC... channel id)
+  "@InclusiveQuest"
 ];
