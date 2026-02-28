@@ -6,9 +6,38 @@ export type YtItem = {
   thumb: string;
 };
 
-export async function fetchChannelUploads(channelId: string, maxResults = 18): Promise<YtItem[]> {
+async function resolveChannelId(input: string, apiKey: string): Promise<string | null> {
+  const trimmed = (input ?? "").trim();
+  if (!trimmed) return null;
+
+  // If it's already a UC... channel ID, use it.
+  if (/^UC[a-zA-Z0-9_-]{10,}$/.test(trimmed)) return trimmed;
+
+  // Otherwise treat it as a handle (supports "@Handle" or "Handle")
+  const handle = trimmed.replace(/^@/, "");
+
+  const url = new URL("https://www.googleapis.com/youtube/v3/channels");
+  url.searchParams.set("part", "id");
+  url.searchParams.set("forHandle", handle);
+  url.searchParams.set("key", apiKey);
+
+  const res = await fetch(url.toString(), { next: { revalidate: 86400 } });
+  if (!res.ok) return null;
+
+  const data = await res.json();
+  const channelId = data?.items?.[0]?.id;
+  return typeof channelId === "string" ? channelId : null;
+}
+
+export async function fetchChannelUploads(
+  channelIdOrHandle: string,
+  maxResults = 18
+): Promise<YtItem[]> {
   const apiKey = process.env.YOUTUBE_API_KEY;
   if (!apiKey) return [];
+
+  const channelId = await resolveChannelId(channelIdOrHandle, apiKey);
+  if (!channelId) return [];
 
   const url = new URL("https://www.googleapis.com/youtube/v3/search");
   url.searchParams.set("part", "snippet");
@@ -22,18 +51,25 @@ export async function fetchChannelUploads(channelId: string, maxResults = 18): P
   if (!res.ok) return [];
 
   const data = await res.json();
-  const items: YtItem[] = (data.items ?? []).map((it: any) => ({
-    videoId: it?.id?.videoId ?? "",
-    title: it?.snippet?.title ?? "Untitled",
-    channelTitle: it?.snippet?.channelTitle ?? "",
-    publishedAt: it?.snippet?.publishedAt ?? "",
-    thumb: it?.snippet?.thumbnails?.medium?.url ?? it?.snippet?.thumbnails?.default?.url ?? ""
-  })).filter((x: YtItem) => x.videoId);
+  const items: YtItem[] = (data.items ?? [])
+    .map((it: any) => ({
+      videoId: it?.id?.videoId ?? "",
+      title: it?.snippet?.title ?? "Untitled",
+      channelTitle: it?.snippet?.channelTitle ?? "",
+      publishedAt: it?.snippet?.publishedAt ?? "",
+      thumb:
+        it?.snippet?.thumbnails?.medium?.url ??
+        it?.snippet?.thumbnails?.default?.url ??
+        "",
+    }))
+    .filter((x: YtItem) => x.videoId);
 
   return items;
 }
 
-export async function fetchVideoMeta(videoId: string): Promise<{title: string; description: string; channelTitle: string}> {
+export async function fetchVideoMeta(
+  videoId: string
+): Promise<{ title: string; description: string; channelTitle: string }> {
   const apiKey = process.env.YOUTUBE_API_KEY;
   if (!apiKey) return { title: "Video", description: "", channelTitle: "" };
 
@@ -52,6 +88,6 @@ export async function fetchVideoMeta(videoId: string): Promise<{title: string; d
   return {
     title: item?.snippet?.title ?? "Video",
     description: item?.snippet?.description ?? "",
-    channelTitle: item?.snippet?.channelTitle ?? ""
+    channelTitle: item?.snippet?.channelTitle ?? "",
   };
 }
