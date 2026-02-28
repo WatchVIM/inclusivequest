@@ -5,16 +5,17 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Brand
         brandRed: "#E50914",
         brandBlue: "#3B82F6",
-      },
-      colors: {
+
+        // App tokens
         bg: "#070A10",
         card: "rgba(255,255,255,0.04)",
         line: "rgba(255,255,255,0.10)",
         text: "rgba(255,255,255,0.92)",
-        muted: "rgba(255,255,255,0.62)"
-      }
+        muted: "rgba(255,255,255,0.62)",
+      },
     },
   },
   plugins: [],
