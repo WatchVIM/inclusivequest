@@ -37,7 +37,8 @@ async function resolveChannelIdFromHandleHtml(handle: string): Promise<string | 
   // "channelId":"UC...."
   const m =
     html.match(/"browseId":"(UC[^"]+)"/) ||
-    html.match(/"channelId":"(UC[^"]+)"/);
+    html.match(/"channelId":"(UC[^"]+)"/) ||
+    html.match(/"externalId":"(UC[^"]+)"/);
 
   return m?.[1] ?? null;
 }
