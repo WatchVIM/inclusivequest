@@ -13,6 +13,7 @@ function chunk<T>(arr: T[], size: number): T[][] {
 }
 
 export default async function Home() {
+  const hasKey = !!hasKey && process.env.YOUTUBE_API_KEY.startsWith("AIza");
   const channelId = CHANNEL_IDS?.[0];
   const uploads: YtItem[] = channelId ? await fetchChannelUploads(channelId, 55) : [];
 
@@ -50,7 +51,7 @@ export default async function Home() {
           </div>
 
           <div className="text-xs text-muted md:text-right">
-            {process.env.YOUTUBE_API_KEY ? (
+            {hasKey ? (
               <span className="inline-flex items-center rounded-full border border-line bg-white/5 px-3 py-2">
                 Live channel feed enabled
               </span>
