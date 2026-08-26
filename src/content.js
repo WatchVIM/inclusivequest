@@ -2,7 +2,46 @@ export const BRAND = {
   name: 'InclusiveQest',
   tagline: 'Hear Every Story. See Every Voice.',
   logoSrc: '/inclusiveqest-logo.png',
-  supportEmail: 'support@inclusiveqest.com'
+  supportEmail: 'support@inclusiveqest.com',
+  contactEmail: 'support@inclusiveqest.com'
+};
+
+export const ABOUT = {
+  heading: 'About Inclusive Quest',
+  paragraphs: [
+    "Imagine walking past a world full of conversations you can see but never join. The content is right there — in plain sight. But no one built the bridge to let you in.",
+    "That's the daily reality for 1.5 billion Deaf and Hard-of-Hearing people worldwide.",
+    'Inclusive Quest (IQ) is that bridge.',
+    "The global podcast industry is worth $39.6 billion. Zero major platforms offer native ASL interpretation. That's the gap IQ fills.",
+    "IQ is the platform that layers ASL interpretation directly onto podcast content. We don't make podcasts. We make podcasts accessible — to a community that has been locked out of the fastest-growing media format on the planet for far too long.",
+    'The model is simple: platforms and publishers pay for the integration. DHH viewers access it for free. Access is the product. Inclusion is the mission.',
+    "IQ isn't a feature. It's the missing layer."
+  ]
+};
+
+export const FOUNDER = {
+  // Upload one image to public/founder-photo.jpg and both founder-photo placements update automatically.
+  photoSrc: '/founder-photo.jpg',
+  photoAlt: 'Inclusive Quest founder',
+  name: '',
+  title: 'Founder',
+  homeQuote: 'To build the bridge that should have always been there.',
+  story: [
+    "My why began when I realized that life doesn't discriminate. Humans do — consciously or not.",
+    "Growing up, I watched my neighbor's daughter, no older than 7 or 8, play by herself. Excluded from activities. Excluded from conversations. Forced to stay home while the rest of us went to school. To get her attention, people would shout at her. I watched all of this as a child — and even then, with full hearing, I felt a pain I couldn't yet put into words.",
+    "Little did I know that one day I'd be in her shoes.",
+    'Excluded from activities. Excluded from conversations. Shouted at. The world kept evolving — but very little of that evolution made room for the Deaf and Hard-of-Hearing community.',
+    'Podcasts are one of the largest educational and entertainment platforms available to anyone. But not everyone.',
+    'Inclusive Quest exists to change that. To build the bridge that should have always been there. To make sure that no child — and no adult — ever has to sit on the outside of a conversation again.'
+  ]
+};
+
+export const TEAM = {
+  placeholder:
+    'IQ is founder-led and growing. We are actively building our team of interpreters, technologists, and accessibility advocates. Interested in joining the quest? Get in touch.',
+  // Add future team members here. Example fields:
+  // { name: 'Name', title: 'Title', bio: 'Short bio', photoSrc: '/team/name.jpg' }
+  members: []
 };
 
 export const DEMO_VIDEO = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
