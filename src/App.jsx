@@ -1,13 +1,17 @@
 import React, { useMemo, useRef, useState } from 'react';
 import {
+  ABOUT,
   BRAND,
   CREATOR_CHECKLIST,
   FEATURES,
+  FOUNDER,
   MERCH,
   STATS,
+  TEAM,
   TITLES
 } from './content.js';
 import { useSyncedSidecar } from './utils/useSyncedSidecar.js';
+import './about.css';
 
 function Icon({ name, size = 20, className = '' }) {
   const icons = {
@@ -50,9 +54,31 @@ function LogoMark({ compact = false, className = '' }) {
   );
 }
 
+function FounderPhoto({ compact = false }) {
+  const [failed, setFailed] = useState(false);
+
+  return (
+    <div className={compact ? 'founder-photo-shell compact' : 'founder-photo-shell'}>
+      {!failed ? (
+        <img
+          src={FOUNDER.photoSrc}
+          alt={FOUNDER.photoAlt}
+          className="founder-photo"
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <div className="founder-photo-placeholder" role="img" aria-label="Founder photo coming soon">
+          <Icon name="people" size={compact ? 30 : 46} />
+          <span>Founder photo coming soon</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Header({ activeTab, setActiveTab }) {
   const [open, setOpen] = useState(false);
-  const nav = ['Home', 'Watch', 'Podcasts', 'Merch', 'For Creators'];
+  const nav = ['Home', 'About', 'Watch', 'Podcasts', 'Merch', 'For Creators'];
 
   return (
     <header className="site-header">
@@ -372,6 +398,100 @@ function CreatorPage() {
   );
 }
 
+function AboutPage() {
+  const teamIntro = TEAM.placeholder.replace('Get in touch.', '');
+
+  return (
+    <section className="page-section about-page">
+      <div className="container">
+        <section className="about-intro-grid" aria-labelledby="about-heading">
+          <div>
+            <p className="eyebrow">Our mission</p>
+            <h1 id="about-heading">{ABOUT.heading}</h1>
+          </div>
+          <div className="about-copy">
+            {ABOUT.paragraphs.map((paragraph) => (
+              <p key={paragraph}>{paragraph}</p>
+            ))}
+          </div>
+        </section>
+
+        <section className="founder-story-grid" aria-labelledby="founder-heading">
+          <FounderPhoto />
+          <div className="founder-story-copy">
+            <p className="eyebrow">Founder Story</p>
+            <h2 id="founder-heading">Why Inclusive Quest exists.</h2>
+            {FOUNDER.name && <p className="founder-name">{FOUNDER.name} · {FOUNDER.title}</p>}
+            {FOUNDER.story.map((paragraph) => (
+              <p key={paragraph}>{paragraph}</p>
+            ))}
+          </div>
+        </section>
+
+        <section className="team-section" aria-labelledby="team-heading">
+          <div className="section-heading split">
+            <div>
+              <p>Team</p>
+              <h1 id="team-heading">The people building the bridge.</h1>
+            </div>
+          </div>
+
+          {TEAM.members.length > 0 ? (
+            <div className="team-grid">
+              {TEAM.members.map((member) => (
+                <article className="team-card" key={`${member.name}-${member.title}`}>
+                  {member.photoSrc ? (
+                    <img src={member.photoSrc} alt={member.name ? `${member.name}, ${member.title}` : member.title} />
+                  ) : (
+                    <div className="team-photo-placeholder"><Icon name="people" size={34} /></div>
+                  )}
+                  <div>
+                    <h3>{member.name}</h3>
+                    <span>{member.title}</span>
+                    <p>{member.bio}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="team-placeholder-copy">
+              <p>
+                {teamIntro}
+                <a href="#work-with-us">Get in touch</a>.
+              </p>
+            </div>
+          )}
+        </section>
+
+        <section className="work-with-us" id="work-with-us" aria-labelledby="work-heading">
+          <div>
+            <p className="eyebrow">Work With Us</p>
+            <h2 id="work-heading">Help make every conversation accessible.</h2>
+            <p>Interpreters, technologists, and accessibility advocates are invited to connect with the IQ team.</p>
+          </div>
+          <a className="gradient-button" href={`mailto:${BRAND.contactEmail}`}>
+            Get in touch
+          </a>
+        </section>
+      </div>
+    </section>
+  );
+}
+
+function FounderHomeSpotlight({ setActiveTab }) {
+  return (
+    <section className="container founder-home-spotlight" aria-label="Founder story">
+      <FounderPhoto compact />
+      <div>
+        <p className="eyebrow">Founder Story</p>
+        <blockquote>“{FOUNDER.homeQuote}”</blockquote>
+        <p>Inclusive Quest exists so Deaf and Hard-of-Hearing viewers never have to sit outside the conversation.</p>
+        <button onClick={() => setActiveTab('About')}>Read the founder story →</button>
+      </div>
+    </section>
+  );
+}
+
 function HomePage({ setActiveTab }) {
   return (
     <>
@@ -397,6 +517,8 @@ function HomePage({ setActiveTab }) {
           </article>
         </div>
 
+        <FounderHomeSpotlight setActiveTab={setActiveTab} />
+
         <div className="container stats-grid">
           {STATS.map(([num, label]) => (
             <div key={label} className="stat-card">
@@ -414,6 +536,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('Home');
 
   const page = useMemo(() => {
+    if (activeTab === 'About') return <AboutPage />;
     if (activeTab === 'Watch') return <WatchPage />;
     if (activeTab === 'Podcasts') return <PodcastsPage />;
     if (activeTab === 'Merch') return <MerchPage />;
