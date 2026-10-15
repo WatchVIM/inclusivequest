@@ -1,120 +1,40 @@
-# InclusiveQest Website
+# Inclusive Quest
 
-InclusiveQest is an accessibility-first streaming and podcast platform concept for deaf and hard-of-hearing audiences. This repo includes a launch-ready React/Vite website prototype with:
+**See Every Story. See Every Voice.**
 
-- Homepage with uploaded InclusiveQest logo
-- Watch page with synced ASL sidecar video support
-- Podcast library page
-- Merch store page
-- Creator submission page
-- Captions/transcript/accessibility messaging
-- Vercel deployment config
+This repository contains the Inclusive Quest accessible-podcasts website, built with React 18 and Vite 5 and deployed on Vercel.
 
-## Quick Start
+## Pages
+
+Home · About · Explore · Watch · Podcasts · For Platforms · For Podcasters · Sign In · Sign Up
+
+Footer pages: Privacy, Accessibility, Terms of Service and Support.
+
+The platform is currently in **prelaunch**. Media playback requires licensed podcast video, captions and interpreter footage. Sign-in and sign-up show launch information rather than creating accounts. The merchandise storefront is removed and cannot process purchases.
+
+## Run and verify
 
 ```bash
 npm install
+npm run test
+npm run build
 npm run dev
 ```
 
-Open the local URL Vite provides, usually:
+All page copy, founder information, podcast descriptions, statistics, testimonials and social-link data live in `src/content.js`. The app component and accessibility controls live in `src/App.jsx` and `src/revisions.css`. Replace the temporary show artwork in `public/she-wears-the-pants.svg` with approved licensed artwork before public promotion.
 
-```bash
-http://localhost:5173
-```
+## Accessibility
 
-## Test the repo data
+ASL is mandatory in the playback design, with captions defaulting to enabled. The on-site floating accessibility panel provides display adjustments. It is **not** the AccessiBe third-party widget; the latter requires an approved client account/script configuration and separate validation. Accessibility requires real-user testing, keyboard/screen-reader audits, and captions + ASL source media. A widget alone does not prove compliance.
 
-```bash
-npm run test
-```
+## Client handover requirements
 
-## Build for production
+Before final handover:
+1. Obtain final founder photo, official IQ brand files, licensed episode media, team information, social URLs and approved platform/podcaster forms.
+2. Replace provisional legal page copy with client-counsel-approved policies.
+3. Integrate an authenticated, client-owned CMS and train Alma Beaty on publishing, revisions and approvals.
+4. Connect a persistent newsletter system with explicit consent, confirmed privacy terms and unsubscribing. The current newsletter action opens a contact email instead of storing signups.
+5. Run mobile/desktop browser and accessibility checks, confirm working email/contact delivery and public URL access.
+6. Send admin invite and handover instructions, and provide a tutorial recording after testing.
 
-```bash
-npm run build
-npm run preview
-```
-
-## Deploy to Vercel
-
-1. Create a new GitHub repo, for example `inclusiveqest-web`.
-2. Upload or push this project to GitHub.
-3. Go to Vercel and choose **Add New Project**.
-4. Import the GitHub repo.
-5. Vercel should auto-detect Vite.
-6. Confirm:
-   - Build Command: `npm run build`
-   - Output Directory: `dist`
-7. Click **Deploy**.
-
-## Logo
-
-The company logo is stored here:
-
-```text
-public/inclusiveqest-logo.png
-```
-
-The app references it from:
-
-```js
-BRAND.logoSrc = '/inclusiveqest-logo.png'
-```
-
-## ASL Sidecar Video Setup
-
-The demo uses the same public sample video for the main content and ASL sidecar. In production, each title should have separate files or Mux playback IDs:
-
-```js
-{
-  title: 'Inclusive Voices',
-  mainPlaybackId: 'MUX_MAIN_VIDEO_ID',
-  aslPlaybackId: 'MUX_ASL_INTERPRETER_VIDEO_ID',
-  captionsSrc: '/captions/inclusive-voices.vtt'
-}
-```
-
-The synced sidecar behavior lives in:
-
-```text
-src/utils/useSyncedSidecar.js
-```
-
-It listens for play, pause, seek, playback-rate changes, waiting, and playing events on the main video, then keeps the ASL/interpreter video aligned.
-
-## Mux Integration Notes
-
-For the MVP, you can keep the website on Vercel and put all video assets in Mux. Do not upload large videos directly to Vercel.
-
-Recommended production model:
-
-- Main video: Mux asset
-- ASL/interpreter sidecar: second Mux asset
-- Captions: WebVTT or SRT
-- Transcripts: HTML/Markdown page or database field
-- Title metadata: Supabase, CMS, or static `content.js` until launch grows
-
-When you install Mux Player later, the main video and ASL sidecar can be swapped from native `<video>` elements to Mux Player components.
-
-## Merch Store Options
-
-Fast launch options:
-
-- Shopify Buy Button
-- Shopify Starter
-- Stripe Checkout
-- Printful/Printify for print-on-demand fulfillment
-
-The current merch page is a front-end mockup and does not process checkout yet.
-
-## Suggested Next Features
-
-- Real title CMS
-- Supabase user accounts
-- Mux signed playback for premium content
-- Shopify or Stripe checkout
-- Creator submission form
-- Admin dashboard
-- Transcript search
-- Accessibility statement page
+See `CONTENT_EDITING.md` for temporary source-content editing instructions.

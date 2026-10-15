@@ -1,11 +1,11 @@
 {
-  "name": "inclusiveqest-web",
+  "name": "inclusive-quest-web",
   "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm run test && vite build",
     "preview": "vite preview",
     "test": "node scripts/check-data.mjs"
   },
