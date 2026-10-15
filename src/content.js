@@ -22,8 +22,15 @@ export const FOUNDER = {
   // Upload one image to public/founder-photo.jpg and both founder-photo placements update automatically.
   photoSrc: '/founder-photo.jpg',
   photoAlt: 'Inclusive Quest founder',
-  name: '',
-  title: 'Founder',
+  name: 'Alma Beaty',
+  title: 'Founder & CEO',
+  bio: [
+    'Alma Beaty is the Founder and CEO of Inclusive Quest — a platform built to close the gap between the podcast world and the 1.5 billion Deaf and Hard of Hearing people it has yet to reach.',
+    'A dual U.S. and Sierra Leonean citizen, Alma placed in the Top 10 at the 2026 Entrepreneur of Impact competition — the only Deaf or Hard of Hearing founder in the room.',
+    'She writes, she builds, she advocates. She has learned to find humor in the face of adversity while finding solutions that are often hidden in plain sight.',
+    'She has also learned to deliberately ignore outside noise, critics, and naysayers.',
+    'Her philosophy is simple: access for one is access for all.'
+  ],
   homeQuote: 'To build the bridge that should have always been there.',
   story: [
     "My why began when I realized that life doesn't discriminate. Humans do — consciously or not.",
@@ -83,5 +90,16 @@ export const STATS = [
 ];
 
 // Approved testimonials and social links can be added when supplied by the client.
-export const TESTIMONIALS = [];
+export const TESTIMONIALS = [
+  {
+    "name": "James McGowan",
+    "title": "Deaf Educator",
+    "quote": "I was born hearing and became Deaf between 2 and 3 years old due to a high fever. I remember growing up without closed captions in the media, and language deprivation had an impact on my life. I grew up in Deaf institutions. My teachers knew American Sign Language and provided captions, but I didn't understand the English, so the teachers had to interpret what the videos were saying. I grew up wishing we had captions and sign language at the same time.\n\nI never enjoyed watching podcasts because I never understood what they were saying, or they added captions with terminology I was not familiar with.\n\nMy good friend Alma Beaty, the founder, is creating Inclusive Quest and changing how Deaf people like myself access platforms like podcasts. I have always wanted to learn about different topics such as business, tiny houses, and travel, but there’s no podcast out there accessible in my language to teach me these things.\n\nNow with Inclusive Quest, I will have access to educational information that my hearing peers have access to. Deaf and Hard of Hearing people are not behind. We’re simply left behind in a world that is always changing.\n\nI do enjoy reading captions. But podcasts in my language, American Sign Language, are something that will change my life and the lives of millions of Deaf and Hard of Hearing people. Inclusive Quest is going to change that."
+  },
+  {
+    "name": "Juliana Vadala",
+    "title": "Certified ASL Interpreter",
+    "quote": "As a professional ASL interpreter who enjoys discussing and sharing media with Deaf friends, the elephant in the room is that we can’t share podcasts or even discuss them because there is a glaring disparity: podcasts are inaccessible to Deaf individuals. While everyone has noticed this disparity, no one has taken up the mantle to provide the Deaf community access to podcasts like Inclusive Quest.\n\n“But podcasts have transcripts now — isn’t that enough?” Simply put, it’s not enough. Deaf Americans’ primary language is American Sign Language, not written English. To make podcasts accessible to the Deaf community, they need to be interpreted into ASL.\n\nAlma Beaty has identified this massive inequality and has worked tirelessly to bridge the gap. This is an important venture to include the Deaf community in the news, updates, conversations, and entertainment the rest of the world enjoys via podcasts. Admirable and necessary, Inclusive Quest is making podcasts accessible one clip at a time."
+  }
+];
 export const SOCIAL_LINKS = [];
