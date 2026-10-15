@@ -1,15 +1,27 @@
 import assert from 'node:assert/strict';
-import { BRAND, CREATOR_CHECKLIST, FEATURES, MERCH, TITLES } from '../src/content.js';
+import { readFileSync } from 'node:fs';
+import { BRAND, FEATURES, FOUNDER, PODCASTER_CHECKLIST, STATS, TESTIMONIALS, TITLES } from '../src/content.js';
 
-assert.equal(BRAND.name, 'InclusiveQest', 'Brand name should be InclusiveQest');
-assert.ok(BRAND.logoSrc.endsWith('.png'), 'Logo should point to a PNG in /public');
-assert.ok(TITLES.length >= 3, 'Expected at least 3 sample titles');
-assert.ok(
-  TITLES.every((item) => item.id && item.title && item.mainVideoSrc && item.aslVideoSrc && item.captionsSrc),
-  'Every title needs id, title, main video, ASL sidecar video, and captions'
-);
-assert.ok(FEATURES.length >= 5, 'Expected at least 5 platform features');
-assert.ok(MERCH.length >= 3, 'Expected at least 3 merch products');
-assert.ok(CREATOR_CHECKLIST.length >= 5, 'Expected at least 5 creator checklist items');
-
-console.log('InclusiveQest repo checks passed.');
+const app = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
+const index = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const packageInfo = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+assert.equal(BRAND.name, 'Inclusive Quest');
+assert.equal(BRAND.tagline, 'See Every Story. See Every Voice.');
+assert.equal(BRAND.contactEmail, 'info@inclusivequest.co');
+assert.ok(BRAND.logoSrc.endsWith('.svg'));
+assert.equal(FOUNDER.name, 'Alma Beaty');
+assert.ok(FOUNDER.bio.length >= 5);
+assert.equal(TESTIMONIALS.length, 2);
+assert.deepEqual(TESTIMONIALS.map(item => item.name), ['James McGowan', 'Juliana Vadala']);
+assert.ok(FEATURES.find(feature => feature.title === 'Topic Search & Interpreter Profiles'));
+assert.equal(STATS.length, 4);
+assert.ok(PODCASTER_CHECKLIST.length >= 4);
+assert.equal(TITLES[0].title, 'She Wears the Pants');
+assert.ok(app.includes('For Platforms') && app.includes('For Podcasters'));
+assert.ok(app.includes('Captions (default ON)'));
+assert.ok(!app.includes('Hide ASL'));
+assert.ok(!app.includes('Add to Cart'));
+assert.ok(!app.includes('Mux-ready demo'));
+assert.ok(!app.includes("'Merch'"));
+assert.ok(!/InclusiveQest/i.test([app, index, packageInfo.name, BRAND.name, JSON.stringify(TITLES)].join('\n')));
+console.log('Inclusive Quest brand, content, navigation and safety checks passed.');
