@@ -1,21 +1,20 @@
 export const BRAND = {
-  name: 'InclusiveQest',
-  tagline: 'Hear Every Story. See Every Voice.',
-  logoSrc: '/inclusiveqest-logo.png',
-  supportEmail: 'support@inclusiveqest.com',
-  contactEmail: 'support@inclusiveqest.com'
+  name: 'Inclusive Quest',
+  tagline: 'See Every Story. See Every Voice.',
+  logoSrc: '/inclusive-quest-mark.svg',
+  supportEmail: 'info@inclusivequest.co',
+  contactEmail: 'info@inclusivequest.co'
 };
 
 export const ABOUT = {
   heading: 'About Inclusive Quest',
   paragraphs: [
     "Imagine walking past a world full of conversations you can see but never join. The content is right there — in plain sight. But no one built the bridge to let you in.",
-    "That's the daily reality for 1.5 billion Deaf and Hard-of-Hearing people worldwide.",
+    "That's the daily reality for Deaf and Hard of Hearing people who have been excluded from podcast conversations.",
     'Inclusive Quest (IQ) is that bridge.',
-    "The global podcast industry is worth $39.6 billion. Zero major platforms offer native ASL interpretation. That's the gap IQ fills.",
-    "IQ is the platform that layers ASL interpretation directly onto podcast content. We don't make podcasts. We make podcasts accessible — to a community that has been locked out of the fastest-growing media format on the planet for far too long.",
-    'The model is simple: platforms and publishers pay for the integration. DHH viewers access it for free. Access is the product. Inclusion is the mission.',
-    "IQ isn't a feature. It's the missing layer."
+    'We make podcasts accessible through integrated ASL interpretation, clear captions, transcripts, and ways to discover relevant conversations.',
+    'IQ works with platforms and podcasters to make every story easier to see, understand, and share.',
+    "Access is the product. Inclusion is the mission."
   ]
 };
 
@@ -44,127 +43,45 @@ export const TEAM = {
   members: []
 };
 
-export const DEMO_VIDEO = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
-
-// Production note:
-// Replace demoVideo URLs with your Mux playback URLs or Mux playback IDs.
-// Best practice: store mainPlaybackId and aslPlaybackId per title in your CMS/database.
 export const TITLES = [
   {
-    id: 'talk-001',
-    title: 'Inclusive Voices',
+    id: 'she-wears-the-pants',
+    title: 'She Wears the Pants',
+    episodeTitle: 'Calling All Women in Business: How to Stop Overthinking and Start Taking Smarter Risks',
     category: 'Podcast',
-    duration: '32 min',
-    badge: 'CC + ASL',
-    poster: 'https://images.unsplash.com/photo-1478737270239-2f02b77fc618?q=80&w=1400&auto=format&fit=crop',
-    mainVideoSrc: DEMO_VIDEO,
-    aslVideoSrc: DEMO_VIDEO,
-    captionsSrc: '/sample-captions.vtt',
-    mux: {
-      mainPlaybackId: 'YOUR_MAIN_MUX_PLAYBACK_ID',
-      aslPlaybackId: 'YOUR_ASL_MUX_PLAYBACK_ID'
-    },
-    description:
-      'A visual podcast series with ASL interpretation, captions, and full transcripts built directly into the viewing experience.'
-  },
-  {
-    id: 'doc-002',
-    title: 'Beyond the Caption',
-    category: 'Documentary',
-    duration: '58 min',
-    badge: 'Transcript Ready',
-    poster: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=1400&auto=format&fit=crop',
-    mainVideoSrc: DEMO_VIDEO,
-    aslVideoSrc: DEMO_VIDEO,
-    captionsSrc: '/sample-captions.vtt',
-    mux: {
-      mainPlaybackId: 'YOUR_MAIN_MUX_PLAYBACK_ID',
-      aslPlaybackId: 'YOUR_ASL_MUX_PLAYBACK_ID'
-    },
-    description:
-      'A human-centered documentary exploring how deaf and hard-of-hearing communities experience media, culture, and storytelling.'
-  },
-  {
-    id: 'edu-003',
-    title: 'Open Dialogue',
-    category: 'Series',
-    duration: '29 min',
-    badge: 'Accessible Audio',
-    poster: 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?q=80&w=1400&auto=format&fit=crop',
-    mainVideoSrc: DEMO_VIDEO,
-    aslVideoSrc: DEMO_VIDEO,
-    captionsSrc: '/sample-captions.vtt',
-    mux: {
-      mainPlaybackId: 'YOUR_MAIN_MUX_PLAYBACK_ID',
-      aslPlaybackId: 'YOUR_ASL_MUX_PLAYBACK_ID'
-    },
-    description:
-      'A weekly access-first conversation series designed for captions, transcripts, interpreter video, and flexible playback layouts.'
+    duration: 'Episode preview',
+    badge: 'ASL + Captions',
+    poster: '/she-wears-the-pants.svg',
+    mainVideoSrc: null,
+    aslVideoSrc: null,
+    captionsSrc: null,
+    description: 'Conversations that help women in business move past overthinking and take smarter risks. Accessible playback coming soon.'
   }
 ];
 
 export const FEATURES = [
-  {
-    icon: 'hands',
-    title: 'Sign Language',
-    text: 'Professional interpreter video beside every story.'
-  },
-  {
-    icon: 'captions',
-    title: 'Captions & Subtitles',
-    text: 'Accurate, synced, and easy to read.'
-  },
-  {
-    icon: 'transcript',
-    title: 'Transcripts',
-    text: 'Full episode transcripts for every show.'
-  },
-  {
-    icon: 'audio',
-    title: 'Accessible Audio',
-    text: 'Clear audio with volume normalization.'
-  },
-  {
-    icon: 'people',
-    title: 'Community First',
-    text: 'Stories by and for the D/HH community.'
-  }
+  { icon: 'hands', title: 'Live ASL Interpretation', text: 'Interpretation built into the podcast experience — not an optional afterthought.' },
+  { icon: 'captions', title: 'Captions & Subtitles', text: 'Clear, synchronized captions designed to keep every conversation easy to follow.' },
+  { icon: 'transcript', title: 'Transcripts', text: 'Readable transcripts that make conversations easier to navigate.' },
+  { icon: 'search', title: 'Topic Search & Interpreter Profiles', text: 'Search by topic or interpreter. Your content, your way.' },
+  { icon: 'people', title: 'Community First', text: 'Designed with DHH audiences at the center, with room for more stories and voices.' }
 ];
 
-export const MERCH = [
-  {
-    id: 'hoodie-001',
-    name: 'InclusiveQest Logo Hoodie',
-    price: '$54',
-    tag: 'Launch Item'
-  },
-  {
-    id: 'tee-001',
-    name: 'Hear Every Story Tee',
-    price: '$28',
-    tag: 'Best Seller'
-  },
-  {
-    id: 'mug-001',
-    name: 'See Every Voice Mug',
-    price: '$18',
-    tag: 'Creator Pick'
-  }
-];
-
-export const CREATOR_CHECKLIST = [
-  'Main video file or Mux asset ID',
-  'ASL/interpreter sidecar video with matching duration',
-  'SRT or WebVTT captions',
-  'Full transcript',
-  'Poster, horizontal hero image, and title logo',
-  'Merch artwork or store collection'
+export const PODCASTER_CHECKLIST = [
+  'Your podcast title, description, and a contact email',
+  'An episode link or audio/video sample',
+  'Episode artwork and any available promotional images',
+  'A transcript or captions, if you already have them',
+  'Any accessibility support or interpreter details you can share'
 ];
 
 export const STATS = [
-  ['25K+', 'Community Members'],
-  ['1,200+', 'Accessible Videos'],
-  ['450+', 'Podcast Episodes'],
-  ['80+', 'Countries Reached'],
-  ['100%', 'Inclusion Focused']
+  ['37.5M+', 'US adults report difficulty hearing'],
+  ['1.5B+', 'Deaf and Hard of Hearing people globally'],
+  ['$39.6B', 'Podcast industry'],
+  ['0', 'Major platforms with native ASL interpretation']
 ];
+
+// Approved testimonials and social links can be added when supplied by the client.
+export const TESTIMONIALS = [];
+export const SOCIAL_LINKS = [];
