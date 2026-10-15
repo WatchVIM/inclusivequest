@@ -8,7 +8,8 @@ const packageInfo = JSON.parse(readFileSync(new URL('../package.json', import.me
 assert.equal(BRAND.name, 'Inclusive Quest');
 assert.equal(BRAND.tagline, 'See Every Story. See Every Voice.');
 assert.equal(BRAND.contactEmail, 'info@inclusivequest.co');
-assert.ok(BRAND.logoSrc.endsWith('.svg'));
+assert.equal(BRAND.logoSrc, '/inclusive-quest-logo.png');
+assert.ok(readFileSync(new URL('../public/inclusive-quest-logo.png', import.meta.url)).length > 1000);
 assert.equal(FOUNDER.name, 'Alma Beaty');
 assert.ok(FOUNDER.bio.length >= 5);
 assert.equal(TESTIMONIALS.length, 2);

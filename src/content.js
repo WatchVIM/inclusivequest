@@ -1,7 +1,7 @@
 export const BRAND = {
   name: 'Inclusive Quest',
   tagline: 'See Every Story. See Every Voice.',
-  logoSrc: '/inclusive-quest-mark.svg',
+  logoSrc: '/inclusive-quest-logo.png',
   supportEmail: 'info@inclusivequest.co',
   contactEmail: 'info@inclusivequest.co'
 };
