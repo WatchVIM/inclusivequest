@@ -1,63 +1,24 @@
-# Inclusive Quest Content Editing
+# Inclusive Quest — temporary content editing instructions
 
-The About page, Founder Story, and Team section are intentionally driven from one file so routine content updates do not require component changes.
+Inclusive Quest is **not yet connected to a production CMS**. Until one is configured, approved source updates must be reviewed, tested and published through GitHub/Vercel.
 
-## Founder photo
+**Content source:** `src/content.js`
 
-Upload one image named exactly:
+- `BRAND`: name, tagline, support and contact email
+- `ABOUT.paragraphs`: About introduction
+- `FOUNDER`: Alma Beaty name, title, biography, story and headshot
+- `TEAM.members`: confirmed team member records
+- `TITLES`: podcast metadata and licensed audio/ASL/caption sources
+- `FEATURES`: capability cards
+- `PODCASTER_CHECKLIST`: submission requirements
+- `STATS`: client-requested figures; verify factual sources before investor use
+- `TESTIMONIALS`: testimonials and attributions approved for public display
+- `SOCIAL_LINKS`: `{ label: 'Instagram', url: 'https://...' }` entries once supplied
 
-`public/founder-photo.jpg`
+**Photos:** `FOUNDER.photoSrc` currently points to `/founder-photo.jpg`. Upload the approved portrait as `public/founder-photo.jpg`. Until then, the website displays a placeholder. Each team member can specify their own `photoSrc`.
 
-That single image is used automatically in both locations:
+**Review and release:** edit on a feature branch, run `npm run test` and `npm run build`, obtain content approval, merge to `main`, and verify the Vercel production alias in a signed-out browser. Never treat a successful preview as public release.
 
-- About page — large Founder Story photo
-- Homepage — smaller Founder Story photo near the statistics section
+**Pending CMS handover:** choose client-owned CMS hosting, authentication, roles, editor training, backups and media workflow. The client should be able to edit pages and media without editing code after this integration.
 
-If the image has not been uploaded yet, the site shows a clean “Founder photo coming soon” placeholder instead of a broken image.
-
-## Founder name and title
-
-Open `src/content.js` and edit the `FOUNDER` object:
-
-```js
-export const FOUNDER = {
-  photoSrc: '/founder-photo.jpg',
-  photoAlt: 'Inclusive Quest founder',
-  name: 'Founder Name',
-  title: 'Founder & CEO',
-  // ...
-};
-```
-
-## Add team members
-
-Open `src/content.js` and find `TEAM.members`.
-
-Add one object per person using these four fields:
-
-```js
-members: [
-  {
-    name: 'Full Name',
-    title: 'Role / Title',
-    bio: 'Short biography.',
-    photoSrc: '/team/full-name.jpg'
-  }
-]
-```
-
-Upload team photos into `public/team/` using the same filename referenced in `photoSrc`.
-
-When `TEAM.members` is empty, the site automatically displays the current founder-led placeholder copy and the “Get in touch” link.
-
-## Edit About or Founder Story copy
-
-The About copy lives in `ABOUT.paragraphs` in `src/content.js`.
-
-The Founder Story copy lives in `FOUNDER.story` in `src/content.js`.
-
-Each paragraph is a separate quoted item, so wording can be changed without touching the page layout.
-
-## Contact link
-
-The Work With Us email is controlled by `BRAND.contactEmail` in `src/content.js`.
+**External accessibility service:** add the specific AccessiBe embed only after Alma authorizes/provisions the account; use the official script for her account, not a guessed ID. Keep native accessibility and ASL features regardless.
