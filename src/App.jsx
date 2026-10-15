@@ -280,7 +280,8 @@ function AboutPage() {
     </section>
     <section className="bio-section" aria-labelledby="bio-heading">
       <p className="eyebrow">Founder Bio</p><h2 id="bio-heading">Founder Bio</h2>
-      <p>{FOUNDER.name ? FOUNDER.name + (FOUNDER.title ? ' — ' + FOUNDER.title : '') : 'Founder biography will be added when approved by the founder.'}</p>
+      <p className="founder-name">{FOUNDER.name} — {FOUNDER.title}</p>
+      {FOUNDER.bio?.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
     </section>
     <section className="founder-story-grid" aria-labelledby="founder-heading">
       <FounderPhoto />
