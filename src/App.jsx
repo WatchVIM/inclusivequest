@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  ABOUT, BRAND, FEATURES, FOUNDER, PODCASTER_CHECKLIST,
+  ABOUT, BRAND, FEATURES, FOUNDER, PODCASTER_CHECKLIST, INVEST_FORM, MISSION_VISION_VALUES,
   SOCIAL_LINKS, STATS, TEAM, TESTIMONIALS, TITLES, WORK_WITH_US_FORMS
 } from './content.js';
 import { useSyncedSidecar } from './utils/useSyncedSidecar.js';
@@ -11,17 +11,18 @@ const NAV = ['Home', 'About', 'Explore', 'Watch', 'Podcasts', 'For Platforms', '
 const SLUGS = {
   Home: 'home', About: 'about', Explore: 'explore', Watch: 'watch',
   Podcasts: 'podcasts', 'For Platforms': 'for-platforms', 'For Podcasters': 'for-podcasters',
-  'Sign In': 'sign-in', 'Sign Up': 'sign-up', Privacy: 'privacy',
+  'Sign In': 'sign-in', 'Sign Up': 'sign-up', Invest: 'invest', Privacy: 'privacy',
   Accessibility: 'accessibility', 'Terms of Service': 'terms-of-service', Support: 'support'
 };
 const DESCRIPTIONS = {
-  Home: 'Accessible podcasts with ASL interpretation, captions and searchable transcripts.',
+  Home: 'Accessible podcasts with Sign Language interpretation, captions and searchable transcripts.',
   About: 'Our mission, founder story, team, testimonials, and partnership opportunities.',
   Explore: 'Discover Inclusive Quest podcasts by topic and interpreter.',
-  Watch: 'Inclusive Quest makes ASL interpretation part of the podcast viewing experience.',
+  Watch: 'Inclusive Quest makes Sign Language interpretation part of the podcast viewing experience.',
   Podcasts: 'Explore podcasts with ASL, captions, and transcripts.',
-  'For Platforms': 'Bring integrated ASL interpretation and accessible discovery to your podcast platform.',
-  'For Podcasters': 'Share your podcast with Inclusive Quest and reach DHH audiences.'
+  'For Platforms': 'Bring integrated Sign Language interpretation and accessible discovery to your podcast platform.',
+  'For Podcasters': 'Share your podcast with Inclusive Quest and reach DHH audiences.',
+  Invest: 'Learn about investment opportunities in Inclusive Quest.'
 };
 function currentPage() {
   const slug = window.location.hash.replace(/^#\/?/, '');
@@ -72,7 +73,8 @@ function Hero({ navigate }) {
       <div className="hero-copy">
         <div className="mission-pill"><Icon name="heart" /> Built for Deaf and Hard of Hearing communities</div>
         <h1>Accessible Podcasts.<span>See Every Story. See Every Voice.</span></h1>
-        <p>Explore the podcast world through live ASL interpretation, captions, transcripts, and topic-based discovery — with DHH audiences at the center.</p>
+        <p>Explore the podcast world through Sign Language interpretation, captions, transcripts, and topic-based discovery — with DHH audiences at the center.</p>
+        <p className="hero-iq-question"><strong>What's Your IQ?</strong> Not Intelligence. Inclusivity Quotient. <em>Is your content reaching everyone?</em></p>
         <div className="hero-buttons">
           <button className="gradient-button" onClick={() => navigate('Watch')}><Icon name="play" /> Start Watching</button>
           <button className="glass-button" onClick={() => navigate('Explore')}><Icon name="search" /> Start Exploring</button>
@@ -87,11 +89,11 @@ function FeaturedPlayerPreview() {
   return <div className="preview-frame">
     <div className="preview-grid">
       <div className="interpreter-card preview-card">
-        <div className="card-topline"><span>ASL</span><span>Inclusive Quest</span></div>
-        <div className="interpreter-placeholder">
-          <span className="pencil-hand" role="img" aria-label="Mirrored, grayscale okay hand illustration">👌🏾</span>
-          <strong>Live ASL Interpretation</strong>
-          <small>Integrated into the experience</small>
+        <div className="card-topline"><span>Sign Language</span><span>Inclusive Quest</span></div>
+        <div className="interpreter-placeholder professional-preview">
+          <img className="preview-brand-mark" src={BRAND.logoSrc} alt="" />
+          <strong>Sign Language Interpretation</strong>
+          <small>Interpreter video preview coming soon</small>
         </div>
       </div>
       <div className="main-preview-card">
@@ -165,7 +167,7 @@ function HomePage({ navigate }) {
           <p>Follow the conversation with clear captions and searchable transcripts.</p>
           <button onClick={() => navigate('Podcasts')}>Explore podcasts →</button></article>
         <article className="info-panel"><h3>For Platforms</h3>
-          <p>Work with IQ to make podcast discovery and ASL interpretation more accessible.</p>
+          <p>Work with IQ to make podcast discovery and Sign Language interpretation more accessible.</p>
           <button onClick={() => navigate('For Platforms')}>Explore partnerships →</button></article>
         <article className="info-panel"><h3>For Podcasters</h3>
           <p>Bring your podcast to DHH audiences with access-first presentation.</p>
@@ -175,7 +177,7 @@ function HomePage({ navigate }) {
       <div className="container stats-grid">{STATS.map(([value, label]) =>
         <div key={label} className="stat-card"><strong>{value}</strong><span>{label}</span></div>)}</div>
     </section>
-    <Testimonials /><Newsletter />
+    <Testimonials /><section className="container invest-home"><h2>Invest in accessibility for everyone.</h2><p>Inclusive Quest is building toward an accessible podcast future. Explore opportunities to support that vision.</p><button className="glass-button" onClick={() => navigate('Invest')}>Invest in Inclusive Quest →</button></section><Newsletter />
   </>;
 }
 function SyncedPlayer({ title, captionsEnabled }) {
@@ -200,22 +202,22 @@ function SyncedPlayer({ title, captionsEnabled }) {
     <div className="player-title-row">
       <div><p>Accessible Podcasts</p><h2>{title.title}</h2><small>{title.episodeTitle}</small></div>
       {hasEpisode && <div className="player-actions"><button onClick={() => setLayout(layout === 'left' ? 'right' : 'left')}>
-        Move ASL {layout === 'left' ? 'Right' : 'Left'}</button></div>}
+        Move Sign Language {layout === 'left' ? 'Right' : 'Left'}</button></div>}
     </div>
     {hasEpisode ? <div className={'video-grid ' + layout}>
-      {layout === 'left' && <aside className="sidecar-panel"><div className="card-topline">ASL interpretation</div>
+      {layout === 'left' && <aside className="sidecar-panel"><div className="card-topline">Sign Language interpretation</div>
         <video ref={aslRef} src={title.aslVideoSrc} muted playsInline preload="metadata"
-          aria-label="ASL interpreter video" className="sidecar-video" /></aside>}
+          aria-label="Sign Language interpreter video" className="sidecar-video" /></aside>}
       <div className="main-video-panel"><video key={title.id} ref={mainRef} src={title.mainVideoSrc}
         poster={title.poster} controls playsInline preload="metadata" aria-label={title.title + ' episode'}>
         {title.captionsSrc && <track kind="captions" label="English" srcLang="en" src={title.captionsSrc} default />}
       </video></div>
-      {layout === 'right' && <aside className="sidecar-panel"><div className="card-topline">ASL interpretation</div>
-        <video ref={aslRef} src={title.aslVideoSrc} muted playsInline preload="metadata" aria-label="ASL interpreter video" className="sidecar-video" /></aside>}
+      {layout === 'right' && <aside className="sidecar-panel"><div className="card-topline">Sign Language interpretation</div>
+        <video ref={aslRef} src={title.aslVideoSrc} muted playsInline preload="metadata" aria-label="Sign Language interpreter video" className="sidecar-video" /></aside>}
     </div> : <div className="watch-unavailable">
       <img src={title.poster} alt={title.title + ' podcast artwork'} />
-      <div><p className="eyebrow">Episode coming soon</p><h3>Built-in ASL. Clear captions. Every conversation.</h3>
-        <p>Podcast playback will appear here when the licensed episode and interpreter media are delivered. ASL interpretation will always remain visible.</p></div>
+      <div><p className="eyebrow">Episode coming soon</p><h3>Built-in Sign Language. Clear captions. Every conversation.</h3>
+        <p>Podcast playback will appear here when the licensed episode and interpreter media are delivered. Sign Language interpretation will always remain visible.</p></div>
     </div>}
   </div>;
 }
@@ -251,11 +253,11 @@ function PodcastsPage({ navigate, setSelectedTitle, explore = false }) {
 function ForPlatforms() {
   return <section className="page-section"><div className="container creator-grid">
     <div><p className="eyebrow">For Platforms</p><h1>Make more podcast conversations accessible.</h1>
-      <p className="large-copy">Partner with Inclusive Quest to bring native ASL interpretation, clear captions, transcripts, and accessible discovery to your listeners and viewers.</p>
+      <p className="large-copy">Partner with Inclusive Quest to bring native Sign Language interpretation, clear captions, transcripts, and accessible discovery to your listeners and viewers.</p>
       <a className="gradient-button link-button" href={WORK_WITH_US_FORMS.platforms.url} target="_blank" rel="noopener noreferrer">Submit a platform inquiry <span aria-hidden="true">↗</span></a>
     </div>
     <div className="checklist-card"><h2>What we can build together</h2>
-      {['Integrated ASL interpretation', 'Captions and searchable transcripts', 'Topic discovery and interpreter profiles', 'Audience-first accessibility workflows'].map((item) =>
+      {['Integrated Sign Language interpretation', 'Captions and searchable transcripts', 'Topic discovery and interpreter profiles', 'Audience-first accessibility workflows'].map((item) =>
         <div className="checklist-item" key={item}><Icon name="star" /> <span>{item}</span></div>)}
     </div>
   </div>
@@ -277,7 +279,7 @@ function ForPodcasters() {
   </section>;
 }
 function TallySubmissionForm({ kind }) {
-  const form = WORK_WITH_US_FORMS[kind];
+  const form = kind === 'investment' ? INVEST_FORM : WORK_WITH_US_FORMS[kind];
   return <div className="tally-form-wrap" id={'submission-' + kind}>
     <div className="tally-form-heading">
       <div><h3>{form.heading}</h3><p>{form.description}</p></div>
@@ -311,7 +313,13 @@ function AboutPage() {
   return <section className="page-section about-page"><div className="container">
     <section className="about-intro-grid" aria-labelledby="about-heading">
       <div><p className="eyebrow">Our mission</p><h1 id="about-heading">About Inclusive Quest</h1></div>
-      <div className="about-copy">{ABOUT.paragraphs.map((p) => <p key={p}>{p}</p>)}</div>
+      <div className="about-copy">{ABOUT.paragraphs.map((p) => <p key={p}>{p}</p>)}
+        <img className="about-signature-logo" src={BRAND.logoSrc} alt="Inclusive Quest" /></div>
+    </section>
+    <section className="mission-vision-values" aria-label="Our mission, vision and values">
+      {MISSION_VISION_VALUES.map((item) => <article key={item.id} className="mvv-card" id={item.id}>
+        <p className="eyebrow">Inclusive Quest</p><h2>{item.heading}</h2><p>{item.text}</p>
+      </article>)}
     </section>
     <section className="bio-section" aria-labelledby="bio-heading">
       <p className="eyebrow">Founder Bio</p><h2 id="bio-heading">Founder Bio</h2>
@@ -342,6 +350,19 @@ function AboutPage() {
       </div>
       <WorkWithUsForms />
     </section>
+    <section className="invest-prompt" aria-labelledby="invest-about-heading">
+      <h2 id="invest-about-heading">Invest in Inclusive Quest</h2>
+      <p>Help us build the next generation of inclusive podcast experiences.</p>
+      <a href="#/invest" className="gradient-button link-button">Investment inquiry <span aria-hidden="true">↗</span></a>
+    </section>
+  </div></section>;
+}
+function InvestPage() {
+  return <section className="page-section"><div className="container invest-page">
+    <p className="eyebrow">Invest in Inclusive Quest</p>
+    <h1>Build a world of accessible conversations.</h1>
+    <p className="large-copy">Interested in backing Inclusive Quest? Share your details with the founding team through the dedicated investor inquiry form below.</p>
+    <TallySubmissionForm kind="investment" />
   </div></section>;
 }
 const POLICIES = {
@@ -355,7 +376,7 @@ const POLICIES = {
   Accessibility: {
     intro: 'Accessibility at Inclusive Quest',
     paragraphs: ['We are building Inclusive Quest for Deaf and Hard of Hearing audiences, with accessible headings, keyboard-friendly controls, and descriptive image text.',
-      'ASL interpretation is a core part of our playback design. Captions default to on once episodes are available.',
+      'Sign Language interpretation is a core part of our playback design. Captions default to on once episodes are available.',
       'Display controls can help adjust contrast, text size, reduce motion, and highlight links. These controls do not replace assistive technology or accessibility testing.',
       'Please report accessibility barriers to info@inclusivequest.co.']
   },
@@ -406,7 +427,7 @@ function AccessibilityPanel({ captionsEnabled, setCaptionsEnabled, settings, set
     {open && <section id="a11y-panel" className="a11y-panel" aria-label="Accessibility preferences">
       <div className="a11y-panel-heading"><h2>Accessibility preferences</h2>
         <button onClick={() => setOpen(false)} aria-label="Close accessibility preferences">×</button></div>
-      <p>Customize your viewing experience. ASL remains available by design.</p>
+      <p>Customize your viewing experience. Sign Language interpretation remains available by design.</p>
       {options.map(([key, label]) => <label className="a11y-option" key={key}>
         <span>{label}</span><input type="checkbox" checked={!!settings[key]} onChange={() => toggle(key)} />
       </label>)}
@@ -444,6 +465,7 @@ export default function App() {
   else if (activeTab === 'Explore' || activeTab === 'Podcasts') page =
     <PodcastsPage navigate={navigate} setSelectedTitle={setSelectedTitle} explore={activeTab === 'Explore'} />;
   else if (activeTab === 'Watch') page = <WatchPage selectedTitle={selectedTitle} setSelectedTitle={setSelectedTitle} captionsEnabled={captionsEnabled} />;
+  else if (activeTab === 'Invest') page = <InvestPage />;
   else if (activeTab === 'For Platforms') page = <ForPlatforms />;
   else if (activeTab === 'For Podcasters') page = <ForPodcasters />;
   else if (activeTab === 'Sign In' || activeTab === 'Sign Up') page = <AccountPage page={activeTab} />;
@@ -455,9 +477,9 @@ export default function App() {
     <Header activeTab={activeTab} navigate={navigate} />
     <main id="main-content" tabIndex="-1">{page}</main>
     <footer className="site-footer"><div className="container footer-inner">
-      <LogoMark />
+      <div className="footer-brand"><LogoMark /><p className="footer-tagline">{BRAND.footerTagline}</p></div>
       <nav aria-label="Footer links" className="footer-links">
-        {['Privacy', 'Accessibility', 'Terms of Service', 'Support'].map((item) =>
+        {['Privacy', 'Accessibility', 'Terms of Service', 'Support', 'Invest'].map((item) =>
           <a key={item} href={'#/' + SLUGS[item]}>{item}</a>)}
         <a href={'mailto:' + BRAND.contactEmail}>{BRAND.contactEmail}</a>
         {SOCIAL_LINKS.map((item) => <a key={item.url} href={item.url} target="_blank" rel="noopener noreferrer">{item.label}</a>)}
