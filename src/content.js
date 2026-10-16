@@ -3,7 +3,8 @@ export const BRAND = {
   tagline: 'See Every Story. See Every Voice.',
   logoSrc: '/inclusive-quest-logo.png',
   supportEmail: 'info@inclusivequest.co',
-  contactEmail: 'info@inclusivequest.co'
+  contactEmail: 'info@inclusivequest.co',
+  footerTagline: 'Unveiling Access, One Quest at a Time.'
 };
 
 // Submission forms are managed in the client's Tally workspace. Keep these URLs exact.
@@ -21,8 +22,47 @@ export const WORK_WITH_US_FORMS = {
     description: 'For podcast creators who want to share a show and discuss making it accessible.',
     url: 'https://tally.so/r/LD1G0j',
     embedUrl: 'https://tally.so/embed/LD1G0j?alignLeft=1&hideTitle=1&transparentBackground=1'
+  },
+  interpreters: {
+    label: 'Interpreters',
+    heading: 'Interpreter collaboration',
+    description: 'For sign language interpreters interested in helping make podcasts more accessible.',
+    url: 'https://tally.so/r/OQ1Bj7',
+    embedUrl: 'https://tally.so/embed/OQ1Bj7?alignLeft=1&hideTitle=1&transparentBackground=1'
+  },
+  other: {
+    label: 'Other',
+    heading: 'Other ways to work with IQ',
+    description: 'For advocates, technologists, accessibility professionals, and other collaborators.',
+    url: 'https://tally.so/r/J1KkQK',
+    embedUrl: 'https://tally.so/embed/J1KkQK?alignLeft=1&hideTitle=1&transparentBackground=1'
   }
 };
+
+export const INVEST_FORM = {
+  heading: 'Invest in Inclusive Quest',
+  description: 'Connect with Inclusive Quest to discuss potential investment and partnership opportunities.',
+  url: 'https://tally.so/r/aONj6W',
+  embedUrl: 'https://tally.so/embed/aONj6W?alignLeft=1&hideTitle=1&transparentBackground=1'
+};
+
+export const MISSION_VISION_VALUES = [
+  {
+    id: 'mission',
+    heading: 'Mission Statement',
+    text: 'Inclusive Quest exists to make every podcast accessible to the Deaf and Hard of Hearing community — through live sign language interpretation, captions, and transcripts, built directly into the listening experience.'
+  },
+  {
+    id: 'vision',
+    heading: 'Vision Statement',
+    text: "A world where accessibility isn't an afterthought. Where every platform and creator's content reaches every listener, in every language — signed or spoken. That's the standard Inclusive Quest is building toward."
+  },
+  {
+    id: 'values',
+    heading: 'Our Values',
+    text: "Access is Non-Negotiable. Every person deserves to fully experience the content that moves, educates, and connects the world, regardless of level of Deafness, language, or location. We don't add accessibility as an afterthought. We build from it."
+  }
+];
 
 export const ABOUT = {
   heading: 'About Inclusive Quest',
@@ -30,7 +70,7 @@ export const ABOUT = {
     "Imagine walking past a world full of conversations you can see but never join. The content is right there — in plain sight. But no one built the bridge to let you in.",
     "That's the daily reality for Deaf and Hard of Hearing people who have been excluded from podcast conversations.",
     'Inclusive Quest (IQ) is that bridge.',
-    'We make podcasts accessible through integrated ASL interpretation, clear captions, transcripts, and ways to discover relevant conversations.',
+    'We make podcasts accessible through integrated Sign Language interpretation, clear captions, transcripts, and ways to discover relevant conversations.',
     'IQ works with platforms and podcasters to make every story easier to see, understand, and share.',
     "Access is the product. Inclusion is the mission."
   ]
@@ -75,7 +115,7 @@ export const TITLES = [
     episodeTitle: 'Calling All Women in Business: How to Stop Overthinking and Start Taking Smarter Risks',
     category: 'Podcast',
     duration: 'Episode preview',
-    badge: 'ASL + Captions',
+    badge: 'Sign Language + Captions',
     poster: '/she-wears-the-pants.svg',
     mainVideoSrc: null,
     aslVideoSrc: null,
@@ -85,7 +125,7 @@ export const TITLES = [
 ];
 
 export const FEATURES = [
-  { icon: 'hands', title: 'Live ASL Interpretation', text: 'Interpretation built into the podcast experience — not an optional afterthought.' },
+  { icon: 'hands', title: 'Live Sign Language Interpretation', text: 'Interpretation built into the podcast experience — not an optional afterthought.' },
   { icon: 'captions', title: 'Captions & Subtitles', text: 'Clear, synchronized captions designed to keep every conversation easy to follow.' },
   { icon: 'transcript', title: 'Transcripts', text: 'Readable transcripts that make conversations easier to navigate.' },
   { icon: 'search', title: 'Topic Search & Interpreter Profiles', text: 'Search by topic or interpreter. Your content, your way.' },
@@ -104,7 +144,7 @@ export const STATS = [
   ['37.5M+', 'US adults report difficulty hearing'],
   ['1.5B+', 'Deaf and Hard of Hearing people globally'],
   ['$39.6B', 'Podcast industry'],
-  ['0', 'Major platforms with native ASL interpretation']
+  ['0', 'Major platforms with native Sign Language interpretation']
 ];
 
 // Approved testimonials and social links can be added when supplied by the client.
@@ -118,6 +158,11 @@ export const TESTIMONIALS = [
     "name": "Juliana Vadala",
     "title": "Certified ASL Interpreter",
     "quote": "As a professional ASL interpreter who enjoys discussing and sharing media with Deaf friends- the elephant in the room is that we can’t share podcasts or even discuss them because there is a glaring disparity- podcasts are inaccessible to Deaf individuals. While everyone has noticed this disparity no one has taken up the mantle to provide the Deaf community access to podcasts like Inclusive Quest.\n\n‘But podcasts have transcripts now- isn’t that enough?’ Simply put, it’s not enough. Deaf Americans’ primary language is American Sign Language not written English. To make podcasts accessible to the Deaf community, they need to be interpreted into ASL.\n\nAlma Beaty has identified this massive inequality and has worked tirelessly to bridge the gap. This is an important venture to include the Deaf community in the news, updates, conversations and entertainment the rest of the world enjoys via podcasts. Admirable and necessary, Inclusive Quest is making podcasts accessible one clip at a time."
+  },
+  {
+    "name": "Y.S.",
+    "title": "Law Student",
+    "quote": "I used to take podcasts for granted — commuting, cooking, relaxing. Then I learned that 1.5 billion Deaf and Hard of Hearing people are entirely cut off from that world. Inclusive Quest isn’t just a company. It’s a movement toward a future where no one is left unheard or unseen."
   }
 ];
 export const SOCIAL_LINKS = [];
