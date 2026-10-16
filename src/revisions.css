@@ -185,3 +185,6 @@
 .app-shell.highContrast .caption-sample.yellow-black{background:#000!important;color:#ffff00!important;border:2px solid #ffff00}
 .app-shell.highContrast .caption-sample.white-black{background:#000!important;color:#fff!important;border:2px solid #fff}
 .app-shell.highContrast .caption-box{color:var(--caption-fg,#fff)!important;background:var(--caption-bg,#000)!important}
+
+.about-signature{grid-column:1/-1;display:flex;justify-content:center;align-items:center;margin:10px auto 0;width:100%}
+.about-signature-logo{margin:0 auto}
