@@ -6,6 +6,24 @@ export const BRAND = {
   contactEmail: 'info@inclusivequest.co'
 };
 
+// Submission forms are managed in the client's Tally workspace. Keep these URLs exact.
+export const WORK_WITH_US_FORMS = {
+  platforms: {
+    label: 'Platforms',
+    heading: 'Platform partnership inquiry',
+    description: 'For platforms and publishers exploring accessible podcast partnerships with Inclusive Quest.',
+    url: 'https://tally.so/r/jeDMqQ',
+    embedUrl: 'https://tally.so/embed/jeDMqQ?alignLeft=1&hideTitle=1&transparentBackground=1'
+  },
+  podcasters: {
+    label: 'Podcasters',
+    heading: 'Podcaster submission',
+    description: 'For podcast creators who want to share a show and discuss making it accessible.',
+    url: 'https://tally.so/r/LD1G0j',
+    embedUrl: 'https://tally.so/embed/LD1G0j?alignLeft=1&hideTitle=1&transparentBackground=1'
+  }
+};
+
 export const ABOUT = {
   heading: 'About Inclusive Quest',
   paragraphs: [
