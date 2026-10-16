@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { BRAND, FEATURES, FOUNDER, PODCASTER_CHECKLIST, STATS, TESTIMONIALS, TITLES, WORK_WITH_US_FORMS } from '../src/content.js';
+import { BRAND, FEATURES, FOUNDER, PODCASTER_CHECKLIST, STATS, TESTIMONIALS, TITLES, WORK_WITH_US_FORMS, INVEST_FORM, MISSION_VISION_VALUES } from '../src/content.js';
 
 const app = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
 const index = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
@@ -12,8 +12,8 @@ assert.equal(BRAND.logoSrc, '/inclusive-quest-logo.png');
 assert.ok(readFileSync(new URL('../public/inclusive-quest-logo.png', import.meta.url)).length > 1000);
 assert.equal(FOUNDER.name, 'Alma Beaty');
 assert.ok(FOUNDER.bio.length >= 5);
-assert.equal(TESTIMONIALS.length, 2);
-assert.deepEqual(TESTIMONIALS.map(item => item.name), ['James McGowan', 'Juliana Vadala']);
+assert.equal(TESTIMONIALS.length, 3);
+assert.deepEqual(TESTIMONIALS.map(item => item.name), ['James McGowan', 'Juliana Vadala', 'Y.S.']);
 assert.ok(FEATURES.find(feature => feature.title === 'Topic Search & Interpreter Profiles'));
 assert.equal(STATS.length, 4);
 assert.ok(PODCASTER_CHECKLIST.length >= 4);
@@ -28,7 +28,17 @@ assert.equal(WORK_WITH_US_FORMS.podcasters.url, 'https://tally.so/r/LD1G0j');
 for (const form of Object.values(WORK_WITH_US_FORMS)) {
   assert.ok(form.embedUrl.startsWith('https://tally.so/embed/'));
 }
+assert.equal(WORK_WITH_US_FORMS.interpreters.url, 'https://tally.so/r/OQ1Bj7');
+assert.equal(WORK_WITH_US_FORMS.other.url, 'https://tally.so/r/J1KkQK');
+assert.equal(INVEST_FORM.url, 'https://tally.so/r/aONj6W');
+assert.equal(MISSION_VISION_VALUES.length, 3);
 assert.ok(app.includes('function WorkWithUsForms()'));
+assert.ok(app.includes("What's Your IQ?"));
+assert.ok(app.includes('Sign Language mode (always ON)'));
+assert.ok(app.includes('id="a11y-text-size"'));
+assert.ok(app.includes('caption-style'));
+assert.ok(app.includes('SpeechSynthesisUtterance'));
+assert.ok(!app.includes('pencil-hand'));
 assert.ok(app.includes('className="tally-form-frame"'));
 assert.ok(app.includes('<TallySubmissionForm kind="platforms" />'));
 assert.ok(app.includes('<TallySubmissionForm kind="podcasters" />'));

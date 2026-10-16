@@ -10,7 +10,7 @@ Home · About · Explore · Watch · Podcasts · For Platforms · For Podcasters
 
 Home offers two distinct calls to action: **Start Watching** opens Watch, while **Start Exploring** opens the browse-and-search Explore page.
 
-**Work With Us:** the About page hosts switchable Tally forms, and the For Platforms / For Podcasters pages embed their respective forms with direct-open fallbacks. Platform submissions use https://tally.so/r/jeDMqQ; podcaster submissions use https://tally.so/r/LD1G0j. Form responses are managed in the client's Tally workspace, not this GitHub repository or the website's CMS.
+**Work With Us:** the About page hosts switchable Tally forms, and the For Platforms / For Podcasters pages embed their respective forms with direct-open fallbacks. Platform submissions: https://tally.so/r/jeDMqQ; podcasters: https://tally.so/r/LD1G0j; interpreters: https://tally.so/r/OQ1Bj7; other collaborators: https://tally.so/r/J1KkQK. The dedicated investment page embeds https://tally.so/r/aONj6W. Form responses are managed in the client's Tally workspace, not this GitHub repository or the website's CMS.
 
 Footer pages: Privacy, Accessibility, Terms of Service and Support.
 
@@ -25,7 +25,9 @@ npm run build
 npm run dev
 ```
 
-All page copy, founder information, podcast descriptions, statistics, testimonials and social-link data live in `src/content.js`. The app component and accessibility controls live in `src/App.jsx` and `src/revisions.css`. Replace the temporary show artwork in `public/she-wears-the-pants.svg` with approved licensed artwork before public promotion.
+All page copy, founder information, Mission/Vision/Values placeholder statements, podcast descriptions, statistics, five Tally submission URLs, testimonials and social-link data live in `src/content.js`. The app component and accessibility controls live in `src/App.jsx` and `src/revisions.css`. Replace the temporary show artwork in `public/she-wears-the-pants.svg` with approved licensed artwork before public promotion.
+
+The site offers an accessibility panel with four text-size levels, strong contrast and focused-reading options, color-vision-friendly display colors, animation pausing, highlighted links, three caption palettes, and opt-in browser-native Read Aloud / Auto-Read. These require browser testing and do not replace human accessibility audits.
 
 ## Accessibility
 
@@ -41,4 +43,4 @@ Before final handover:
 5. Run mobile/desktop browser and accessibility checks, confirm working email/contact delivery and public URL access.
 6. Send admin invite and handover instructions, and provide a tutorial recording after testing.
 
-See `CONTENT_EDITING.md` for temporary source-content editing instructions.
+See `CONTENT_EDITING.md` for temporary source-content editing instructions and `CMS_HANDOVER.md` for the client-owned CMS activation criteria, full editor-access checklist and captioned tutorial plan. **Do not imply the CMS or tutorial is delivered yet.**

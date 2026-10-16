@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  ABOUT, BRAND, FEATURES, FOUNDER, PODCASTER_CHECKLIST,
+  ABOUT, BRAND, FEATURES, FOUNDER, PODCASTER_CHECKLIST, INVEST_FORM, MISSION_VISION_VALUES,
   SOCIAL_LINKS, STATS, TEAM, TESTIMONIALS, TITLES, WORK_WITH_US_FORMS
 } from './content.js';
 import { useSyncedSidecar } from './utils/useSyncedSidecar.js';
@@ -11,17 +11,18 @@ const NAV = ['Home', 'About', 'Explore', 'Watch', 'Podcasts', 'For Platforms', '
 const SLUGS = {
   Home: 'home', About: 'about', Explore: 'explore', Watch: 'watch',
   Podcasts: 'podcasts', 'For Platforms': 'for-platforms', 'For Podcasters': 'for-podcasters',
-  'Sign In': 'sign-in', 'Sign Up': 'sign-up', Privacy: 'privacy',
+  'Sign In': 'sign-in', 'Sign Up': 'sign-up', Invest: 'invest', Privacy: 'privacy',
   Accessibility: 'accessibility', 'Terms of Service': 'terms-of-service', Support: 'support'
 };
 const DESCRIPTIONS = {
-  Home: 'Accessible podcasts with ASL interpretation, captions and searchable transcripts.',
+  Home: 'Accessible podcasts with Sign Language interpretation, captions and searchable transcripts.',
   About: 'Our mission, founder story, team, testimonials, and partnership opportunities.',
   Explore: 'Discover Inclusive Quest podcasts by topic and interpreter.',
-  Watch: 'Inclusive Quest makes ASL interpretation part of the podcast viewing experience.',
-  Podcasts: 'Explore podcasts with ASL, captions, and transcripts.',
-  'For Platforms': 'Bring integrated ASL interpretation and accessible discovery to your podcast platform.',
-  'For Podcasters': 'Share your podcast with Inclusive Quest and reach DHH audiences.'
+  Watch: 'Inclusive Quest makes Sign Language interpretation part of the podcast viewing experience.',
+  Podcasts: 'Explore podcasts with Sign Language interpretation, captions, and transcripts.',
+  'For Platforms': 'Bring integrated Sign Language interpretation and accessible discovery to your podcast platform.',
+  'For Podcasters': 'Share your podcast with Inclusive Quest and reach DHH audiences.',
+  Invest: 'Learn about investment opportunities in Inclusive Quest.'
 };
 function currentPage() {
   const slug = window.location.hash.replace(/^#\/?/, '');
@@ -72,7 +73,8 @@ function Hero({ navigate }) {
       <div className="hero-copy">
         <div className="mission-pill"><Icon name="heart" /> Built for Deaf and Hard of Hearing communities</div>
         <h1>Accessible Podcasts.<span>See Every Story. See Every Voice.</span></h1>
-        <p>Explore the podcast world through live ASL interpretation, captions, transcripts, and topic-based discovery — with DHH audiences at the center.</p>
+        <p>Explore the podcast world through Sign Language interpretation, captions, transcripts, and topic-based discovery — with DHH audiences at the center.</p>
+        <p className="hero-iq-question"><strong>What's Your IQ?</strong> Not Intelligence. Inclusivity Quotient. <em>Is your content reaching everyone?</em></p>
         <div className="hero-buttons">
           <button className="gradient-button" onClick={() => navigate('Watch')}><Icon name="play" /> Start Watching</button>
           <button className="glass-button" onClick={() => navigate('Explore')}><Icon name="search" /> Start Exploring</button>
@@ -87,11 +89,11 @@ function FeaturedPlayerPreview() {
   return <div className="preview-frame">
     <div className="preview-grid">
       <div className="interpreter-card preview-card">
-        <div className="card-topline"><span>ASL</span><span>Inclusive Quest</span></div>
-        <div className="interpreter-placeholder">
-          <span className="pencil-hand" role="img" aria-label="Mirrored, grayscale okay hand illustration">👌🏾</span>
-          <strong>Live ASL Interpretation</strong>
-          <small>Integrated into the experience</small>
+        <div className="card-topline"><span>Sign Language</span><span>Inclusive Quest</span></div>
+        <div className="interpreter-placeholder professional-preview">
+          <img className="preview-brand-mark" src={BRAND.logoSrc} alt="" />
+          <strong>Sign Language Interpretation</strong>
+          <small>Interpreter video preview coming soon</small>
         </div>
       </div>
       <div className="main-preview-card">
@@ -165,7 +167,7 @@ function HomePage({ navigate }) {
           <p>Follow the conversation with clear captions and searchable transcripts.</p>
           <button onClick={() => navigate('Podcasts')}>Explore podcasts →</button></article>
         <article className="info-panel"><h3>For Platforms</h3>
-          <p>Work with IQ to make podcast discovery and ASL interpretation more accessible.</p>
+          <p>Work with IQ to make podcast discovery and Sign Language interpretation more accessible.</p>
           <button onClick={() => navigate('For Platforms')}>Explore partnerships →</button></article>
         <article className="info-panel"><h3>For Podcasters</h3>
           <p>Bring your podcast to DHH audiences with access-first presentation.</p>
@@ -175,7 +177,7 @@ function HomePage({ navigate }) {
       <div className="container stats-grid">{STATS.map(([value, label]) =>
         <div key={label} className="stat-card"><strong>{value}</strong><span>{label}</span></div>)}</div>
     </section>
-    <Testimonials /><Newsletter />
+    <Testimonials /><section className="container invest-home"><h2>Invest in accessibility for everyone.</h2><p>Inclusive Quest is building toward an accessible podcast future. Explore opportunities to support that vision.</p><button className="glass-button" onClick={() => navigate('Invest')}>Invest in Inclusive Quest →</button></section><Newsletter />
   </>;
 }
 function SyncedPlayer({ title, captionsEnabled }) {
@@ -200,22 +202,22 @@ function SyncedPlayer({ title, captionsEnabled }) {
     <div className="player-title-row">
       <div><p>Accessible Podcasts</p><h2>{title.title}</h2><small>{title.episodeTitle}</small></div>
       {hasEpisode && <div className="player-actions"><button onClick={() => setLayout(layout === 'left' ? 'right' : 'left')}>
-        Move ASL {layout === 'left' ? 'Right' : 'Left'}</button></div>}
+        Move Sign Language {layout === 'left' ? 'Right' : 'Left'}</button></div>}
     </div>
     {hasEpisode ? <div className={'video-grid ' + layout}>
-      {layout === 'left' && <aside className="sidecar-panel"><div className="card-topline">ASL interpretation</div>
+      {layout === 'left' && <aside className="sidecar-panel"><div className="card-topline">Sign Language interpretation</div>
         <video ref={aslRef} src={title.aslVideoSrc} muted playsInline preload="metadata"
-          aria-label="ASL interpreter video" className="sidecar-video" /></aside>}
+          aria-label="Sign Language interpreter video" className="sidecar-video" /></aside>}
       <div className="main-video-panel"><video key={title.id} ref={mainRef} src={title.mainVideoSrc}
         poster={title.poster} controls playsInline preload="metadata" aria-label={title.title + ' episode'}>
         {title.captionsSrc && <track kind="captions" label="English" srcLang="en" src={title.captionsSrc} default />}
       </video></div>
-      {layout === 'right' && <aside className="sidecar-panel"><div className="card-topline">ASL interpretation</div>
-        <video ref={aslRef} src={title.aslVideoSrc} muted playsInline preload="metadata" aria-label="ASL interpreter video" className="sidecar-video" /></aside>}
+      {layout === 'right' && <aside className="sidecar-panel"><div className="card-topline">Sign Language interpretation</div>
+        <video ref={aslRef} src={title.aslVideoSrc} muted playsInline preload="metadata" aria-label="Sign Language interpreter video" className="sidecar-video" /></aside>}
     </div> : <div className="watch-unavailable">
       <img src={title.poster} alt={title.title + ' podcast artwork'} />
-      <div><p className="eyebrow">Episode coming soon</p><h3>Built-in ASL. Clear captions. Every conversation.</h3>
-        <p>Podcast playback will appear here when the licensed episode and interpreter media are delivered. ASL interpretation will always remain visible.</p></div>
+      <div><p className="eyebrow">Episode coming soon</p><h3>Built-in Sign Language. Clear captions. Every conversation.</h3>
+        <p>Podcast playback will appear here when the licensed episode and interpreter media are delivered. Sign Language interpretation will always remain visible.</p></div>
     </div>}
   </div>;
 }
@@ -251,11 +253,11 @@ function PodcastsPage({ navigate, setSelectedTitle, explore = false }) {
 function ForPlatforms() {
   return <section className="page-section"><div className="container creator-grid">
     <div><p className="eyebrow">For Platforms</p><h1>Make more podcast conversations accessible.</h1>
-      <p className="large-copy">Partner with Inclusive Quest to bring native ASL interpretation, clear captions, transcripts, and accessible discovery to your listeners and viewers.</p>
+      <p className="large-copy">Partner with Inclusive Quest to bring native Sign Language interpretation, clear captions, transcripts, and accessible discovery to your listeners and viewers.</p>
       <a className="gradient-button link-button" href={WORK_WITH_US_FORMS.platforms.url} target="_blank" rel="noopener noreferrer">Submit a platform inquiry <span aria-hidden="true">↗</span></a>
     </div>
     <div className="checklist-card"><h2>What we can build together</h2>
-      {['Integrated ASL interpretation', 'Captions and searchable transcripts', 'Topic discovery and interpreter profiles', 'Audience-first accessibility workflows'].map((item) =>
+      {['Integrated Sign Language interpretation', 'Captions and searchable transcripts', 'Topic discovery and interpreter profiles', 'Audience-first accessibility workflows'].map((item) =>
         <div className="checklist-item" key={item}><Icon name="star" /> <span>{item}</span></div>)}
     </div>
   </div>
@@ -277,7 +279,7 @@ function ForPodcasters() {
   </section>;
 }
 function TallySubmissionForm({ kind }) {
-  const form = WORK_WITH_US_FORMS[kind];
+  const form = kind === 'investment' ? INVEST_FORM : WORK_WITH_US_FORMS[kind];
   return <div className="tally-form-wrap" id={'submission-' + kind}>
     <div className="tally-form-heading">
       <div><h3>{form.heading}</h3><p>{form.description}</p></div>
@@ -312,6 +314,12 @@ function AboutPage() {
     <section className="about-intro-grid" aria-labelledby="about-heading">
       <div><p className="eyebrow">Our mission</p><h1 id="about-heading">About Inclusive Quest</h1></div>
       <div className="about-copy">{ABOUT.paragraphs.map((p) => <p key={p}>{p}</p>)}</div>
+      <div className="about-signature"><img className="about-signature-logo" src={BRAND.logoSrc} alt="Inclusive Quest" /></div>
+    </section>
+    <section className="mission-vision-values" aria-label="Our mission, vision and values">
+      {MISSION_VISION_VALUES.map((item) => <article key={item.id} className="mvv-card" id={item.id}>
+        <p className="eyebrow">Inclusive Quest</p><h2>{item.heading}</h2><p>{item.text}</p>
+      </article>)}
     </section>
     <section className="bio-section" aria-labelledby="bio-heading">
       <p className="eyebrow">Founder Bio</p><h2 id="bio-heading">Founder Bio</h2>
@@ -337,11 +345,24 @@ function AboutPage() {
       <div className="work-with-us-intro">
         <p className="eyebrow">Work With Us</p>
         <h2 id="work-heading">Help make every conversation accessible.</h2>
-        <p>Are you a podcast platform or a podcaster? Select your application below and send your details directly to the Inclusive Quest team.</p>
-        <p>Interpreters, technologists, and accessibility advocates can still <a href={'mailto:' + BRAND.contactEmail}>contact us by email</a>.</p>
+        <p>Whether you're a platform, podcaster, interpreter, or other collaborator, select the right form below and share your ideas with Inclusive Quest.</p>
+        <p>You can also <a href={'mailto:' + BRAND.contactEmail}>reach our team by email</a> if you have questions.</p>
       </div>
       <WorkWithUsForms />
     </section>
+    <section className="invest-prompt" aria-labelledby="invest-about-heading">
+      <h2 id="invest-about-heading">Invest in Inclusive Quest</h2>
+      <p>Help us build the next generation of inclusive podcast experiences.</p>
+      <a href="#/invest" className="gradient-button link-button">Investment inquiry <span aria-hidden="true">↗</span></a>
+    </section>
+  </div></section>;
+}
+function InvestPage() {
+  return <section className="page-section"><div className="container invest-page">
+    <p className="eyebrow">Invest in Inclusive Quest</p>
+    <h1>Build a world of accessible conversations.</h1>
+    <p className="large-copy">Interested in backing Inclusive Quest? Share your details with the founding team through the dedicated investor inquiry form below.</p>
+    <TallySubmissionForm kind="investment" />
   </div></section>;
 }
 const POLICIES = {
@@ -349,13 +370,13 @@ const POLICIES = {
     intro: 'Privacy Notice',
     paragraphs: ['Inclusive Quest is preparing for launch. This site does not yet offer purchases or account registration.',
       'If you email us, the information you send may be used to respond to your inquiry. Please do not send sensitive personal details through email.',
-      'Platform and podcaster application forms are hosted by Tally, a third-party form service. When you submit a form, the details you provide are collected through Tally and shared with Inclusive Quest to evaluate and respond to your inquiry. Review the privacy information provided by the form service before submitting.',
+      'Platform, podcaster, interpreter, other collaboration, and investment inquiry forms are hosted by Tally, a third-party form service. When you submit a form, the details you provide are collected through Tally and shared with Inclusive Quest to evaluate and respond to your inquiry. Review the privacy information provided by the form service before submitting.',
       'This is an interim notice pending a client-approved privacy policy. For privacy questions, contact info@inclusivequest.co.']
   },
   Accessibility: {
     intro: 'Accessibility at Inclusive Quest',
     paragraphs: ['We are building Inclusive Quest for Deaf and Hard of Hearing audiences, with accessible headings, keyboard-friendly controls, and descriptive image text.',
-      'ASL interpretation is a core part of our playback design. Captions default to on once episodes are available.',
+      'Sign Language interpretation is a core part of our playback design. Captions default to on once episodes are available.',
       'Display controls can help adjust contrast, text size, reduce motion, and highlight links. These controls do not replace assistive technology or accessibility testing.',
       'Please report accessibility barriers to info@inclusivequest.co.']
   },
@@ -387,11 +408,14 @@ function AccountPage({ page }) {
     <Newsletter />
   </div></section>;
 }
-function AccessibilityPanel({ captionsEnabled, setCaptionsEnabled, settings, setSettings }) {
+function AccessibilityPanel({
+  captionsEnabled, setCaptionsEnabled, captionStyle, setCaptionStyle,
+  textLevel, setTextLevel, settings, setSettings, readAloud, setReadAloud,
+  autoRead, setAutoRead, onReadPage, onStopRead, speechSupported, speechStatus
+}) {
   const [open, setOpen] = useState(false);
   const options = [
     ['highContrast', 'High contrast'],
-    ['largeText', 'Increase text size'],
     ['adhdFriendly', 'ADHD-friendly reading'],
     ['dyslexiaFriendly', 'Dyslexia-friendly font'],
     ['colorBlind', 'Color-blind friendly'],
@@ -399,22 +423,50 @@ function AccessibilityPanel({ captionsEnabled, setCaptionsEnabled, settings, set
     ['highlightLinks', 'Highlight links']
   ];
   const toggle = (key) => setSettings((previous) => ({ ...previous, [key]: !previous[key] }));
+  const reset = () => {
+    setSettings({}); setCaptionsEnabled(true); setCaptionStyle('white-black');
+    setTextLevel(0); setReadAloud(false); setAutoRead(false); onStopRead();
+  };
   return <div className="a11y-root">
-    <button className="a11y-trigger" aria-expanded={open} aria-controls="a11y-panel" onClick={() => setOpen(!open)}>
-      <span aria-hidden="true">♿</span> Accessibility
-    </button>
+    <button className="a11y-trigger" aria-expanded={open} aria-controls="a11y-panel"
+      onClick={() => setOpen(!open)}><span aria-hidden="true">♿</span> Accessibility</button>
     {open && <section id="a11y-panel" className="a11y-panel" aria-label="Accessibility preferences">
       <div className="a11y-panel-heading"><h2>Accessibility preferences</h2>
         <button onClick={() => setOpen(false)} aria-label="Close accessibility preferences">×</button></div>
-      <p>Customize your viewing experience. ASL remains available by design.</p>
+      <p>Choose how you want to experience Inclusive Quest. Sign Language interpretation is always available by design.</p>
+      <div className="a11y-range-group">
+        <label htmlFor="a11y-text-size">Text size <strong>{['Default', 'Large', 'Larger', 'Largest'][textLevel]}</strong></label>
+        <input id="a11y-text-size" type="range" min="0" max="3" step="1"
+          value={textLevel} onChange={(event) => setTextLevel(Number(event.target.value))}
+          aria-valuetext={['Default', 'Large', 'Larger', 'Largest'][textLevel]} />
+        <span className="a11y-range-labels"><span>Default</span><span>Largest</span></span>
+      </div>
       {options.map(([key, label]) => <label className="a11y-option" key={key}>
         <span>{label}</span><input type="checkbox" checked={!!settings[key]} onChange={() => toggle(key)} />
       </label>)}
       <label className="a11y-option"><span>Captions (default ON)</span>
         <input type="checkbox" checked={captionsEnabled} onChange={(e) => setCaptionsEnabled(e.target.checked)} /></label>
-      <label className="a11y-option"><span>ASL mode (always ON)</span><input type="checkbox" checked readOnly disabled /></label>
-      <p className="a11y-helper">Screen reader support uses semantic page labels and headings by default. No extra mode is required.</p>
-      <button className="outline-button" onClick={() => { setSettings({}); setCaptionsEnabled(true); }}>Reset preferences</button>
+      <label className="a11y-select-group" htmlFor="caption-style"><span>Caption appearance</span>
+        <select id="caption-style" value={captionStyle} onChange={(e) => setCaptionStyle(e.target.value)}>
+          <option value="white-black">White on black</option>
+          <option value="yellow-black">Yellow on black</option>
+          <option value="black-white">Black on white</option>
+        </select>
+      </label>
+      <p className={'caption-sample ' + captionStyle} aria-label="Caption color example">Captions help everyone follow the story.</p>
+      <label className="a11y-option"><span>Sign Language mode (always ON)</span>
+        <input type="checkbox" checked readOnly disabled aria-label="Sign Language mode is always on" /></label>
+      <label className="a11y-option"><span>Read selected or hovered text aloud</span>
+        <input type="checkbox" checked={readAloud} onChange={(e) => setReadAloud(e.target.checked)} disabled={!speechSupported} /></label>
+      <label className="a11y-option"><span>Auto-read each page aloud</span>
+        <input type="checkbox" checked={autoRead} onChange={(e) => setAutoRead(e.target.checked)} disabled={!speechSupported} /></label>
+      <div className="a11y-speech-actions">
+        <button className="glass-button" disabled={!speechSupported} onClick={onReadPage}>Read this page</button>
+        <button className="glass-button" disabled={!speechSupported} onClick={onStopRead}>Stop reading</button>
+      </div>
+      <p role="status" aria-live="polite" className="a11y-speech-status">{speechSupported ? speechStatus || 'Reading aloud may require a user interaction in your browser.' : 'Read Aloud is unavailable in this browser.'}</p>
+      <p className="a11y-helper">This panel complements native screen reader support. Keyboard navigation and semantic page headings remain available.</p>
+      <button className="outline-button" onClick={reset}>Reset preferences</button>
     </section>}
   </div>;
 }
@@ -422,7 +474,84 @@ export default function App() {
   const [activeTab, setActiveTab] = useState(currentPage);
   const [selectedTitle, setSelectedTitle] = useState(TITLES[0]);
   const [captionsEnabled, setCaptionsEnabled] = useState(true);
+  const [captionStyle, setCaptionStyle] = useState('white-black');
+  const [textLevel, setTextLevel] = useState(0);
   const [settings, setSettings] = useState({});
+  const [readAloud, setReadAloud] = useState(false);
+  const [autoRead, setAutoRead] = useState(false);
+  const [speechStatus, setSpeechStatus] = useState('');
+  // Remember consent-based accessibility settings on this device, including optional auto-read.
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(window.localStorage.getItem('inclusive-quest-accessibility-v1') || 'null');
+      if (!saved || typeof saved !== 'object') return;
+      if (typeof saved.captionsEnabled === 'boolean') setCaptionsEnabled(saved.captionsEnabled);
+      if (['white-black', 'yellow-black', 'black-white'].includes(saved.captionStyle)) setCaptionStyle(saved.captionStyle);
+      if ([0, 1, 2, 3].includes(saved.textLevel)) setTextLevel(saved.textLevel);
+      if (saved.settings && typeof saved.settings === 'object') setSettings(saved.settings);
+      if (typeof saved.readAloud === 'boolean') setReadAloud(saved.readAloud);
+      if (typeof saved.autoRead === 'boolean') setAutoRead(saved.autoRead);
+    } catch { /* Private browsing can deny local preference storage. */ }
+  }, []);
+  useEffect(() => {
+    try {
+      window.localStorage.setItem('inclusive-quest-accessibility-v1', JSON.stringify({
+        captionsEnabled, captionStyle, textLevel, settings, readAloud, autoRead
+      }));
+    } catch { /* Preferences remain usable in the current session. */ }
+  }, [captionsEnabled, captionStyle, textLevel, settings, readAloud, autoRead]);
+  const speechSupported = typeof window !== 'undefined' && 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+  const onStopRead = () => { if (speechSupported) window.speechSynthesis.cancel(); setSpeechStatus('Reading stopped.'); };
+  const speak = (raw) => {
+    if (!speechSupported) { setSpeechStatus('Read Aloud is unavailable in this browser.'); return; }
+    window.speechSynthesis.cancel();
+    const content = String(raw || '').replace(/\\s+/g, ' ').trim();
+    if (!content) { setSpeechStatus('No text to read.'); return; }
+    const chunks = content.match(/.{1,900}(?:\\s|$)/g) || [content];
+    chunks.forEach((chunk, index) => {
+      const utterance = new window.SpeechSynthesisUtterance(chunk.trim());
+      utterance.rate = 0.92;
+      utterance.lang = 'en-US';
+      if (index === chunks.length - 1) utterance.onend = () => setSpeechStatus('Finished reading.');
+      utterance.onerror = () => setSpeechStatus('Speech playback was interrupted or blocked by the browser.');
+      window.speechSynthesis.speak(utterance);
+    });
+    setSpeechStatus('Reading aloud. Press Stop reading or Escape to stop.');
+  };
+  const onReadPage = () => speak(document.getElementById('main-content')?.innerText || '');
+  useEffect(() => {
+    if (!readAloud || !speechSupported) return;
+    const main = document.getElementById('main-content');
+    if (!main) return;
+    let hoverTimer;
+    const readSelection = () => {
+      const selected = String(window.getSelection()?.toString() || '').trim();
+      if (selected && selected.length > 2) speak(selected);
+    };
+    const onHover = (event) => {
+      clearTimeout(hoverTimer);
+      if (window.getSelection()?.toString().trim()) return;
+      const target = event.target.closest?.('p, h1, h2, h3, li, blockquote, article strong');
+      if (!target || !main.contains(target)) return;
+      hoverTimer = window.setTimeout(() => speak(target.innerText?.slice(0, 1500) || ''), 1000);
+    };
+    const cancelHover = () => clearTimeout(hoverTimer);
+    main.addEventListener('mouseup', readSelection);
+    main.addEventListener('mouseover', onHover);
+    main.addEventListener('mouseout', cancelHover);
+    return () => { clearTimeout(hoverTimer); main.removeEventListener('mouseup', readSelection);
+      main.removeEventListener('mouseover', onHover); main.removeEventListener('mouseout', cancelHover); };
+  }, [readAloud, activeTab, speechSupported]);
+  useEffect(() => {
+    if (!autoRead || !speechSupported) return;
+    const timer = window.setTimeout(() => onReadPage(), 350);
+    return () => window.clearTimeout(timer);
+  }, [autoRead, activeTab, speechSupported]);
+  useEffect(() => {
+    const stopOnEscape = (event) => { if (event.key === 'Escape' && speechSupported) window.speechSynthesis.cancel(); };
+    window.addEventListener('keydown', stopOnEscape);
+    return () => window.removeEventListener('keydown', stopOnEscape);
+  }, [speechSupported]);
   useEffect(() => {
     const onHash = () => setActiveTab(currentPage());
     window.addEventListener('hashchange', onHash);
@@ -444,20 +573,21 @@ export default function App() {
   else if (activeTab === 'Explore' || activeTab === 'Podcasts') page =
     <PodcastsPage navigate={navigate} setSelectedTitle={setSelectedTitle} explore={activeTab === 'Explore'} />;
   else if (activeTab === 'Watch') page = <WatchPage selectedTitle={selectedTitle} setSelectedTitle={setSelectedTitle} captionsEnabled={captionsEnabled} />;
+  else if (activeTab === 'Invest') page = <InvestPage />;
   else if (activeTab === 'For Platforms') page = <ForPlatforms />;
   else if (activeTab === 'For Podcasters') page = <ForPodcasters />;
   else if (activeTab === 'Sign In' || activeTab === 'Sign Up') page = <AccountPage page={activeTab} />;
   else if (POLICIES[activeTab]) page = <PolicyPage page={activeTab} />;
   else page = <HomePage navigate={navigate} />;
   const classes = Object.entries(settings).filter(([, enabled]) => enabled).map(([key]) => key).join(' ');
-  return <div className={'app-shell ' + classes}>
+  return <div className={'app-shell ' + classes} data-text-level={textLevel} data-caption-style={captionStyle}>
     <a className="skip-link" href="#main-content">Skip to content</a>
     <Header activeTab={activeTab} navigate={navigate} />
     <main id="main-content" tabIndex="-1">{page}</main>
     <footer className="site-footer"><div className="container footer-inner">
-      <LogoMark />
+      <div className="footer-brand"><LogoMark /><p className="footer-tagline">{BRAND.footerTagline}</p></div>
       <nav aria-label="Footer links" className="footer-links">
-        {['Privacy', 'Accessibility', 'Terms of Service', 'Support'].map((item) =>
+        {['Privacy', 'Accessibility', 'Terms of Service', 'Support', 'Invest'].map((item) =>
           <a key={item} href={'#/' + SLUGS[item]}>{item}</a>)}
         <a href={'mailto:' + BRAND.contactEmail}>{BRAND.contactEmail}</a>
         {SOCIAL_LINKS.map((item) => <a key={item.url} href={item.url} target="_blank" rel="noopener noreferrer">{item.label}</a>)}
@@ -465,6 +595,9 @@ export default function App() {
       <p className="copyright">© 2026 Inclusive Quest. All rights reserved.</p>
     </div></footer>
     <AccessibilityPanel captionsEnabled={captionsEnabled} setCaptionsEnabled={setCaptionsEnabled}
-      settings={settings} setSettings={setSettings} />
+      captionStyle={captionStyle} setCaptionStyle={setCaptionStyle}
+      textLevel={textLevel} setTextLevel={setTextLevel} settings={settings} setSettings={setSettings}
+      readAloud={readAloud} setReadAloud={setReadAloud} autoRead={autoRead} setAutoRead={setAutoRead}
+      onReadPage={onReadPage} onStopRead={onStopRead} speechSupported={speechSupported} speechStatus={speechStatus} />
   </div>;
 }
