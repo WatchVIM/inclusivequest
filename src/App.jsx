@@ -408,11 +408,14 @@ function AccountPage({ page }) {
     <Newsletter />
   </div></section>;
 }
-function AccessibilityPanel({ captionsEnabled, setCaptionsEnabled, settings, setSettings }) {
+function AccessibilityPanel({
+  captionsEnabled, setCaptionsEnabled, captionStyle, setCaptionStyle,
+  textLevel, setTextLevel, settings, setSettings, readAloud, setReadAloud,
+  autoRead, setAutoRead, onReadPage, onStopRead, speechSupported, speechStatus
+}) {
   const [open, setOpen] = useState(false);
   const options = [
     ['highContrast', 'High contrast'],
-    ['largeText', 'Increase text size'],
     ['adhdFriendly', 'ADHD-friendly reading'],
     ['dyslexiaFriendly', 'Dyslexia-friendly font'],
     ['colorBlind', 'Color-blind friendly'],
@@ -420,22 +423,50 @@ function AccessibilityPanel({ captionsEnabled, setCaptionsEnabled, settings, set
     ['highlightLinks', 'Highlight links']
   ];
   const toggle = (key) => setSettings((previous) => ({ ...previous, [key]: !previous[key] }));
+  const reset = () => {
+    setSettings({}); setCaptionsEnabled(true); setCaptionStyle('white-black');
+    setTextLevel(0); setReadAloud(false); setAutoRead(false); onStopRead();
+  };
   return <div className="a11y-root">
-    <button className="a11y-trigger" aria-expanded={open} aria-controls="a11y-panel" onClick={() => setOpen(!open)}>
-      <span aria-hidden="true">♿</span> Accessibility
-    </button>
+    <button className="a11y-trigger" aria-expanded={open} aria-controls="a11y-panel"
+      onClick={() => setOpen(!open)}><span aria-hidden="true">♿</span> Accessibility</button>
     {open && <section id="a11y-panel" className="a11y-panel" aria-label="Accessibility preferences">
       <div className="a11y-panel-heading"><h2>Accessibility preferences</h2>
         <button onClick={() => setOpen(false)} aria-label="Close accessibility preferences">×</button></div>
-      <p>Customize your viewing experience. Sign Language interpretation remains available by design.</p>
+      <p>Choose how you want to experience Inclusive Quest. Sign Language interpretation is always available by design.</p>
+      <div className="a11y-range-group">
+        <label htmlFor="a11y-text-size">Text size <strong>{['Default', 'Large', 'Larger', 'Largest'][textLevel]}</strong></label>
+        <input id="a11y-text-size" type="range" min="0" max="3" step="1"
+          value={textLevel} onChange={(event) => setTextLevel(Number(event.target.value))}
+          aria-valuetext={['Default', 'Large', 'Larger', 'Largest'][textLevel]} />
+        <span className="a11y-range-labels"><span>Default</span><span>Largest</span></span>
+      </div>
       {options.map(([key, label]) => <label className="a11y-option" key={key}>
         <span>{label}</span><input type="checkbox" checked={!!settings[key]} onChange={() => toggle(key)} />
       </label>)}
       <label className="a11y-option"><span>Captions (default ON)</span>
         <input type="checkbox" checked={captionsEnabled} onChange={(e) => setCaptionsEnabled(e.target.checked)} /></label>
-      <label className="a11y-option"><span>ASL mode (always ON)</span><input type="checkbox" checked readOnly disabled /></label>
-      <p className="a11y-helper">Screen reader support uses semantic page labels and headings by default. No extra mode is required.</p>
-      <button className="outline-button" onClick={() => { setSettings({}); setCaptionsEnabled(true); }}>Reset preferences</button>
+      <label className="a11y-select-group" htmlFor="caption-style"><span>Caption appearance</span>
+        <select id="caption-style" value={captionStyle} onChange={(e) => setCaptionStyle(e.target.value)}>
+          <option value="white-black">White on black</option>
+          <option value="yellow-black">Yellow on black</option>
+          <option value="black-white">Black on white</option>
+        </select>
+      </label>
+      <p className={'caption-sample ' + captionStyle} aria-label="Caption color example">Captions help everyone follow the story.</p>
+      <label className="a11y-option"><span>Sign Language mode (always ON)</span>
+        <input type="checkbox" checked readOnly disabled aria-label="Sign Language mode is always on" /></label>
+      <label className="a11y-option"><span>Read selected or hovered text aloud</span>
+        <input type="checkbox" checked={readAloud} onChange={(e) => setReadAloud(e.target.checked)} disabled={!speechSupported} /></label>
+      <label className="a11y-option"><span>Auto-read each page aloud</span>
+        <input type="checkbox" checked={autoRead} onChange={(e) => setAutoRead(e.target.checked)} disabled={!speechSupported} /></label>
+      <div className="a11y-speech-actions">
+        <button className="glass-button" disabled={!speechSupported} onClick={onReadPage}>Read this page</button>
+        <button className="glass-button" disabled={!speechSupported} onClick={onStopRead}>Stop reading</button>
+      </div>
+      <p role="status" aria-live="polite" className="a11y-speech-status">{speechSupported ? speechStatus || 'Reading aloud may require a user interaction in your browser.' : 'Read Aloud is unavailable in this browser.'}</p>
+      <p className="a11y-helper">This panel complements native screen reader support. Keyboard navigation and semantic page headings remain available.</p>
+      <button className="outline-button" onClick={reset}>Reset preferences</button>
     </section>}
   </div>;
 }
@@ -443,7 +474,64 @@ export default function App() {
   const [activeTab, setActiveTab] = useState(currentPage);
   const [selectedTitle, setSelectedTitle] = useState(TITLES[0]);
   const [captionsEnabled, setCaptionsEnabled] = useState(true);
+  const [captionStyle, setCaptionStyle] = useState('white-black');
+  const [textLevel, setTextLevel] = useState(0);
   const [settings, setSettings] = useState({});
+  const [readAloud, setReadAloud] = useState(false);
+  const [autoRead, setAutoRead] = useState(false);
+  const [speechStatus, setSpeechStatus] = useState('');
+  const speechSupported = typeof window !== 'undefined' && 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+  const onStopRead = () => { if (speechSupported) window.speechSynthesis.cancel(); setSpeechStatus('Reading stopped.'); };
+  const speak = (raw) => {
+    if (!speechSupported) { setSpeechStatus('Read Aloud is unavailable in this browser.'); return; }
+    window.speechSynthesis.cancel();
+    const content = String(raw || '').replace(/\\s+/g, ' ').trim();
+    if (!content) { setSpeechStatus('No text to read.'); return; }
+    const chunks = content.match(/.{1,900}(?:\\s|$)/g) || [content];
+    chunks.forEach((chunk, index) => {
+      const utterance = new window.SpeechSynthesisUtterance(chunk.trim());
+      utterance.rate = 0.92;
+      utterance.lang = 'en-US';
+      if (index === chunks.length - 1) utterance.onend = () => setSpeechStatus('Finished reading.');
+      utterance.onerror = () => setSpeechStatus('Speech playback was interrupted or blocked by the browser.');
+      window.speechSynthesis.speak(utterance);
+    });
+    setSpeechStatus('Reading aloud. Press Stop reading or Escape to stop.');
+  };
+  const onReadPage = () => speak(document.getElementById('main-content')?.innerText || '');
+  useEffect(() => {
+    if (!readAloud || !speechSupported) return;
+    const main = document.getElementById('main-content');
+    if (!main) return;
+    let hoverTimer;
+    const readSelection = () => {
+      const selected = String(window.getSelection()?.toString() || '').trim();
+      if (selected && selected.length > 2) speak(selected);
+    };
+    const onHover = (event) => {
+      clearTimeout(hoverTimer);
+      if (window.getSelection()?.toString().trim()) return;
+      const target = event.target.closest?.('p, h1, h2, h3, li, blockquote, article strong');
+      if (!target || !main.contains(target)) return;
+      hoverTimer = window.setTimeout(() => speak(target.innerText?.slice(0, 1500) || ''), 1000);
+    };
+    const cancelHover = () => clearTimeout(hoverTimer);
+    main.addEventListener('mouseup', readSelection);
+    main.addEventListener('mouseover', onHover);
+    main.addEventListener('mouseout', cancelHover);
+    return () => { clearTimeout(hoverTimer); main.removeEventListener('mouseup', readSelection);
+      main.removeEventListener('mouseover', onHover); main.removeEventListener('mouseout', cancelHover); };
+  }, [readAloud, activeTab, speechSupported]);
+  useEffect(() => {
+    if (!autoRead || !speechSupported) return;
+    const timer = window.setTimeout(() => onReadPage(), 350);
+    return () => window.clearTimeout(timer);
+  }, [autoRead, activeTab, speechSupported]);
+  useEffect(() => {
+    const stopOnEscape = (event) => { if (event.key === 'Escape' && speechSupported) window.speechSynthesis.cancel(); };
+    window.addEventListener('keydown', stopOnEscape);
+    return () => window.removeEventListener('keydown', stopOnEscape);
+  }, [speechSupported]);
   useEffect(() => {
     const onHash = () => setActiveTab(currentPage());
     window.addEventListener('hashchange', onHash);
@@ -472,7 +560,7 @@ export default function App() {
   else if (POLICIES[activeTab]) page = <PolicyPage page={activeTab} />;
   else page = <HomePage navigate={navigate} />;
   const classes = Object.entries(settings).filter(([, enabled]) => enabled).map(([key]) => key).join(' ');
-  return <div className={'app-shell ' + classes}>
+  return <div className={'app-shell ' + classes} data-text-level={textLevel} data-caption-style={captionStyle}>
     <a className="skip-link" href="#main-content">Skip to content</a>
     <Header activeTab={activeTab} navigate={navigate} />
     <main id="main-content" tabIndex="-1">{page}</main>
@@ -487,6 +575,9 @@ export default function App() {
       <p className="copyright">© 2026 Inclusive Quest. All rights reserved.</p>
     </div></footer>
     <AccessibilityPanel captionsEnabled={captionsEnabled} setCaptionsEnabled={setCaptionsEnabled}
-      settings={settings} setSettings={setSettings} />
+      captionStyle={captionStyle} setCaptionStyle={setCaptionStyle}
+      textLevel={textLevel} setTextLevel={setTextLevel} settings={settings} setSettings={setSettings}
+      readAloud={readAloud} setReadAloud={setReadAloud} autoRead={autoRead} setAutoRead={setAutoRead}
+      onReadPage={onReadPage} onStopRead={onStopRead} speechSupported={speechSupported} speechStatus={speechStatus} />
   </div>;
 }
