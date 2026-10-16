@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ABOUT, BRAND, FEATURES, FOUNDER, PODCASTER_CHECKLIST,
-  SOCIAL_LINKS, STATS, TEAM, TESTIMONIALS, TITLES
+  SOCIAL_LINKS, STATS, TEAM, TESTIMONIALS, TITLES, WORK_WITH_US_FORMS
 } from './content.js';
 import { useSyncedSidecar } from './utils/useSyncedSidecar.js';
 import './about.css';
@@ -74,8 +74,8 @@ function Hero({ navigate }) {
         <h1>Accessible Podcasts.<span>See Every Story. See Every Voice.</span></h1>
         <p>Explore the podcast world through live ASL interpretation, captions, transcripts, and topic-based discovery — with DHH audiences at the center.</p>
         <div className="hero-buttons">
-          <button className="gradient-button" onClick={() => navigate('Explore')}><Icon name="search" /> Start Exploring</button>
-          <button className="glass-button" onClick={() => navigate('Podcasts')}><Icon name="mic" /> Explore Podcasts</button>
+          <button className="gradient-button" onClick={() => navigate('Watch')}><Icon name="play" /> Start Watching</button>
+          <button className="glass-button" onClick={() => navigate('Explore')}><Icon name="search" /> Start Exploring</button>
         </div>
         <blockquote className="hero-quote">48 million people in the US are Deaf or Hard of Hearing. 1.5 billion worldwide — and growing. The podcast world hasn’t made room for them. IQ does.</blockquote>
       </div>
@@ -252,25 +252,60 @@ function ForPlatforms() {
   return <section className="page-section"><div className="container creator-grid">
     <div><p className="eyebrow">For Platforms</p><h1>Make more podcast conversations accessible.</h1>
       <p className="large-copy">Partner with Inclusive Quest to bring native ASL interpretation, clear captions, transcripts, and accessible discovery to your listeners and viewers.</p>
-      <a className="gradient-button link-button" href={'mailto:' + BRAND.contactEmail + '?subject=Inclusive%20Quest%20Platform%20Partnership'}>Discuss a platform partnership</a>
+      <a className="gradient-button link-button" href={WORK_WITH_US_FORMS.platforms.url} target="_blank" rel="noopener noreferrer">Submit a platform inquiry <span aria-hidden="true">↗</span></a>
     </div>
     <div className="checklist-card"><h2>What we can build together</h2>
       {['Integrated ASL interpretation', 'Captions and searchable transcripts', 'Topic discovery and interpreter profiles', 'Audience-first accessibility workflows'].map((item) =>
         <div className="checklist-item" key={item}><Icon name="star" /> <span>{item}</span></div>)}
     </div>
-  </div></section>;
+  </div>
+    <div className="container dedicated-form"><TallySubmissionForm kind="platforms" /></div>
+  </section>;
 }
 function ForPodcasters() {
   return <section className="page-section"><div className="container creator-grid">
     <div><p className="eyebrow">For Podcasters</p><h1>Bring your podcast to more people.</h1>
       <p className="large-copy">We help podcast creators prepare conversations for DHH audiences. Share the essentials of your show, and we'll follow up about accessibility and next steps.</p>
-      <a className="gradient-button link-button" href={'mailto:' + BRAND.contactEmail + '?subject=Inclusive%20Quest%20Podcast%20Submission'}>Contact podcast submissions</a>
+      <a className="gradient-button link-button" href={WORK_WITH_US_FORMS.podcasters.url} target="_blank" rel="noopener noreferrer">Submit your podcast <span aria-hidden="true">↗</span></a>
     </div>
     <div className="checklist-card"><h2>Submission checklist</h2>
       {PODCASTER_CHECKLIST.map((item) =>
         <div key={item} className="checklist-item"><Icon name="star" /><span>{item}</span></div>)}
     </div>
-  </div></section>;
+  </div>
+    <div className="container dedicated-form"><TallySubmissionForm kind="podcasters" /></div>
+  </section>;
+}
+function TallySubmissionForm({ kind }) {
+  const form = WORK_WITH_US_FORMS[kind];
+  return <div className="tally-form-wrap" id={'submission-' + kind}>
+    <div className="tally-form-heading">
+      <div><h3>{form.heading}</h3><p>{form.description}</p></div>
+      <a className="glass-button link-button" href={form.url} target="_blank" rel="noopener noreferrer">
+        Open full form <span aria-hidden="true">↗</span>
+      </a>
+    </div>
+    <iframe
+      key={kind}
+      className="tally-form-frame"
+      src={form.embedUrl}
+      title={'Inclusive Quest — ' + form.heading}
+      loading="lazy"
+      referrerPolicy="strict-origin-when-cross-origin"
+    />
+    <p className="tally-form-note">This form is hosted by Tally. If the embedded form does not load, use “Open full form” above to submit securely on Tally.</p>
+  </div>;
+}
+function WorkWithUsForms() {
+  const [selected, setSelected] = useState('platforms');
+  return <div className="work-with-us-forms">
+    <div className="form-switcher" role="group" aria-label="Choose a submission form">
+      {Object.entries(WORK_WITH_US_FORMS).map(([kind, form]) =>
+        <button key={kind} type="button" className={'form-switch ' + (selected === kind ? 'selected' : '')}
+          aria-pressed={selected === kind} onClick={() => setSelected(kind)}>{form.label}</button>)}
+    </div>
+    <TallySubmissionForm kind={selected} />
+  </div>;
 }
 function AboutPage() {
   return <section className="page-section about-page"><div className="container">
@@ -299,20 +334,23 @@ function AboutPage() {
     </section>
     <Testimonials />
     <section className="work-with-us" id="work-with-us" aria-labelledby="work-heading">
-      <div><p className="eyebrow">Work With Us</p><h2 id="work-heading">Help make every conversation accessible.</h2>
-        <p>Podcasters, platforms, interpreters, and accessibility advocates: tell us what you're working on.</p>
-        <p>Dedicated platform and podcaster forms will be added once approved.</p></div>
-      <a className="gradient-button link-button" href={'mailto:' + BRAND.contactEmail}>Get in touch</a>
+      <div className="work-with-us-intro">
+        <p className="eyebrow">Work With Us</p>
+        <h2 id="work-heading">Help make every conversation accessible.</h2>
+        <p>Are you a podcast platform or a podcaster? Select your application below and send your details directly to the Inclusive Quest team.</p>
+        <p>Interpreters, technologists, and accessibility advocates can still <a href={'mailto:' + BRAND.contactEmail}>contact us by email</a>.</p>
+      </div>
+      <WorkWithUsForms />
     </section>
   </div></section>;
 }
 const POLICIES = {
   Privacy: {
     intro: 'Privacy Notice',
-    paragraphs: ['Inclusive Quest is preparing for launch. This preview site does not offer purchases or account registration.',
-      'If you email us, the information you choose to send may be used to respond to your inquiry. Please do not send sensitive personal details through email.',
-      'Publicly embedded media and external services may have their own privacy policies. A complete privacy notice will be published before account registration or online data collection goes live.',
-      'For privacy questions, contact info@inclusivequest.co.']
+    paragraphs: ['Inclusive Quest is preparing for launch. This site does not yet offer purchases or account registration.',
+      'If you email us, the information you send may be used to respond to your inquiry. Please do not send sensitive personal details through email.',
+      'Platform and podcaster application forms are hosted by Tally, a third-party form service. When you submit a form, the details you provide are collected through Tally and shared with Inclusive Quest to evaluate and respond to your inquiry. Review the privacy information provided by the form service before submitting.',
+      'This is an interim notice pending a client-approved privacy policy. For privacy questions, contact info@inclusivequest.co.']
   },
   Accessibility: {
     intro: 'Accessibility at Inclusive Quest',
@@ -323,9 +361,9 @@ const POLICIES = {
   },
   'Terms of Service': {
     intro: 'Terms of Service',
-    paragraphs: ['This website is a prelaunch preview of Inclusive Quest. Information, artwork, availability, and features may change before launch.',
+    paragraphs: ['This is the prelaunch website for Inclusive Quest. Information, artwork, availability, and features may change before launch.',
       'Content and marks are provided for informational purposes and may not be redistributed without permission of the respective rights holders.',
-      'No account, purchase, or subscription is created through the current preview site. Final platform terms will be published before those services become available.',
+      'No account, purchase, or subscription is created through the current website. Final platform terms will be published before those services become available.',
       'Contact info@inclusivequest.co with questions.']
   },
   Support: {
