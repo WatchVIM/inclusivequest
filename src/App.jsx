@@ -480,6 +480,26 @@ export default function App() {
   const [readAloud, setReadAloud] = useState(false);
   const [autoRead, setAutoRead] = useState(false);
   const [speechStatus, setSpeechStatus] = useState('');
+  // Remember consent-based accessibility settings on this device, including optional auto-read.
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(window.localStorage.getItem('inclusive-quest-accessibility-v1') || 'null');
+      if (!saved || typeof saved !== 'object') return;
+      if (typeof saved.captionsEnabled === 'boolean') setCaptionsEnabled(saved.captionsEnabled);
+      if (['white-black', 'yellow-black', 'black-white'].includes(saved.captionStyle)) setCaptionStyle(saved.captionStyle);
+      if ([0, 1, 2, 3].includes(saved.textLevel)) setTextLevel(saved.textLevel);
+      if (saved.settings && typeof saved.settings === 'object') setSettings(saved.settings);
+      if (typeof saved.readAloud === 'boolean') setReadAloud(saved.readAloud);
+      if (typeof saved.autoRead === 'boolean') setAutoRead(saved.autoRead);
+    } catch { /* Private browsing can deny local preference storage. */ }
+  }, []);
+  useEffect(() => {
+    try {
+      window.localStorage.setItem('inclusive-quest-accessibility-v1', JSON.stringify({
+        captionsEnabled, captionStyle, textLevel, settings, readAloud, autoRead
+      }));
+    } catch { /* Preferences remain usable in the current session. */ }
+  }, [captionsEnabled, captionStyle, textLevel, settings, readAloud, autoRead]);
   const speechSupported = typeof window !== 'undefined' && 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
   const onStopRead = () => { if (speechSupported) window.speechSynthesis.cancel(); setSpeechStatus('Reading stopped.'); };
   const speak = (raw) => {
