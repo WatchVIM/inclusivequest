@@ -19,7 +19,7 @@ const DESCRIPTIONS = {
   About: 'Our mission, founder story, team, testimonials, and partnership opportunities.',
   Explore: 'Discover Inclusive Quest podcasts by topic and interpreter.',
   Watch: 'Inclusive Quest makes Sign Language interpretation part of the podcast viewing experience.',
-  Podcasts: 'Explore podcasts with ASL, captions, and transcripts.',
+  Podcasts: 'Explore podcasts with Sign Language interpretation, captions, and transcripts.',
   'For Platforms': 'Bring integrated Sign Language interpretation and accessible discovery to your podcast platform.',
   'For Podcasters': 'Share your podcast with Inclusive Quest and reach DHH audiences.',
   Invest: 'Learn about investment opportunities in Inclusive Quest.'
@@ -345,8 +345,8 @@ function AboutPage() {
       <div className="work-with-us-intro">
         <p className="eyebrow">Work With Us</p>
         <h2 id="work-heading">Help make every conversation accessible.</h2>
-        <p>Are you a podcast platform or a podcaster? Select your application below and send your details directly to the Inclusive Quest team.</p>
-        <p>Interpreters, technologists, and accessibility advocates can still <a href={'mailto:' + BRAND.contactEmail}>contact us by email</a>.</p>
+        <p>Whether you're a platform, podcaster, interpreter, or other collaborator, select the right form below and share your ideas with Inclusive Quest.</p>
+        <p>You can also <a href={'mailto:' + BRAND.contactEmail}>reach our team by email</a> if you have questions.</p>
       </div>
       <WorkWithUsForms />
     </section>
@@ -370,7 +370,7 @@ const POLICIES = {
     intro: 'Privacy Notice',
     paragraphs: ['Inclusive Quest is preparing for launch. This site does not yet offer purchases or account registration.',
       'If you email us, the information you send may be used to respond to your inquiry. Please do not send sensitive personal details through email.',
-      'Platform and podcaster application forms are hosted by Tally, a third-party form service. When you submit a form, the details you provide are collected through Tally and shared with Inclusive Quest to evaluate and respond to your inquiry. Review the privacy information provided by the form service before submitting.',
+      'Platform, podcaster, interpreter, other collaboration, and investment inquiry forms are hosted by Tally, a third-party form service. When you submit a form, the details you provide are collected through Tally and shared with Inclusive Quest to evaluate and respond to your inquiry. Review the privacy information provided by the form service before submitting.',
       'This is an interim notice pending a client-approved privacy policy. For privacy questions, contact info@inclusivequest.co.']
   },
   Accessibility: {
