@@ -106,3 +106,76 @@
   .tally-form-frame{height:770px}
   .tally-form-heading .link-button{width:100%;max-width:none}
 }
+
+/* 16 October Inclusive Quest client content and accessibility refinement. */
+.hero-iq-question{margin:19px 0 0!important;border-left:4px solid var(--pink);background:rgba(236,72,153,.12);padding:15px 19px;border-radius:0 14px 14px 0;font-size:clamp(16px,1.8vw,20px)!important;color:#fff!important;line-height:1.55!important}
+.hero-iq-question strong{display:block;font-size:1.17em}
+.hero-iq-question em{display:block;font-style:normal;color:var(--cyan);font-weight:750}
+.professional-preview{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:15px;min-height:290px;text-align:center;background:linear-gradient(145deg,#10131c,#161625)}
+.preview-brand-mark{width:120px;height:120px;object-fit:contain;filter:drop-shadow(0 8px 24px #ec489955)}
+.professional-preview strong{font-size:17px}
+.professional-preview small{font-size:13px;color:var(--muted)}
+.about-signature-logo{display:block;object-fit:contain;width:min(230px,60%);height:175px;margin:26px auto 0;filter:drop-shadow(0 12px 23px rgba(0,0,0,.4))}
+.mission-vision-values{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:35px}
+.mvv-card{border-radius:24px;background:var(--panel);border:1px solid var(--stroke);padding:25px}
+.mvv-card h2{font-size:clamp(22px,2.6vw,32px);line-height:1.15;letter-spacing:-.04em;margin:10px 0 12px}
+.mvv-card>p:last-child{font-size:15px;line-height:1.8;color:var(--muted);margin-bottom:0}
+.invest-home,.invest-prompt{border:1px solid var(--stroke);background:var(--panel);border-radius:25px;padding:27px;margin-top:30px;margin-bottom:28px}
+.invest-home h2,.invest-prompt h2{font-size:clamp(27px,3.6vw,42px);margin:0 0 12px}
+.invest-home p,.invest-prompt p{color:var(--muted);line-height:1.65;max-width:760px}
+.invest-home button{min-height:48px}
+.invest-page>h1{font-size:clamp(34px,6vw,65px);line-height:1.08;letter-spacing:-.05em}
+.invest-page>.tally-form-wrap{margin-top:30px}
+.footer-brand{max-width:330px}
+.footer-tagline{margin:10px 0 0;font-weight:800;letter-spacing:.025em;color:var(--cyan);line-height:1.4}
+.form-switcher{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.a11y-root{--iq-control:#ec4899}
+.a11y-panel{border:2px solid #fff8;background:#13141d}
+.a11y-panel input[type=checkbox]{accent-color:var(--iq-control);cursor:pointer}
+.a11y-panel input[type=range]{accent-color:var(--iq-control)}
+.a11y-panel :is(input,select,button):focus-visible{outline:3px solid var(--iq-control);outline-offset:3px}
+.a11y-option:has(input:checked){border-left:4px solid var(--iq-control);background:rgba(236,72,153,.16);padding-left:9px}
+.a11y-option input:disabled{opacity:1;filter:brightness(1.15)}
+.a11y-range-group{border:1px solid #ffffff33;border-radius:15px;padding:14px;margin:10px 0}
+.a11y-range-group label{display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:720}
+.a11y-range-group input{display:block;width:100%;height:25px;margin-top:15px}
+.a11y-range-labels{display:flex;justify-content:space-between;font-size:12px;color:#ddd}
+.a11y-select-group{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:14px;padding:12px 0}
+.a11y-select-group select{min-height:42px;padding:8px 12px;border-radius:10px;background:#000;color:white;border:2px solid #fff8;min-width:130px;max-width:60%}
+.caption-sample{display:block!important;text-align:center!important;margin:6px 0 14px!important;padding:13px!important;font-size:14px!important;border-radius:6px!important}
+.caption-sample.white-black{background:#000!important;color:#fff!important}
+.caption-sample.yellow-black{background:#000!important;color:#ffff00!important}
+.caption-sample.black-white{background:#fff!important;color:#000!important}
+.a11y-speech-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.a11y-speech-actions button{font-size:12px;white-space:normal;min-height:44px}
+.a11y-speech-actions button:disabled{opacity:.45;cursor:not-allowed}
+.a11y-speech-status{font-size:12px!important;line-height:1.5!important;margin:10px 0!important}
+.app-shell[data-text-level="1"]{--reader-size:1.15}
+.app-shell[data-text-level="2"]{--reader-size:1.33}
+.app-shell[data-text-level="3"]{--reader-size:1.54}
+.app-shell[data-text-level]:not([data-text-level="0"]) :is(main p,main li,main label,main blockquote,main small,.footer-tagline,.copyright,.footer-links a){font-size:calc(1rem * var(--reader-size))!important;line-height:1.8!important}
+.app-shell[data-text-level]:not([data-text-level="0"]) main :is(h1,h2,h3){line-height:1.25!important}
+.app-shell.highContrast{--bg:#000;--panel:#000;--panel-strong:#000;--stroke:#fff;--text:#fff;--muted:#fff;--soft:#fff;background:#000!important;color:#fff}
+.app-shell.highContrast :is(.site-header,.hero-section,.feature-card,.stat-card,.info-panel,.preview-frame,.interpreter-card,.main-preview-card,.bio-section,.mvv-card,.team-card,.testimonial-grid blockquote,.newsletter,.work-with-us,.tally-form-wrap,.card-topline,.a11y-panel,.invest-prompt,.invest-home){background:#000!important;border:3px solid #fff!important;color:#fff!important;box-shadow:none!important}
+.app-shell.highContrast :is(p,small,span,h1,h2,h3,a,button,.eyebrow){color:#fff!important;opacity:1!important}
+.app-shell.highContrast .hero-copy h1 span{background:none!important;-webkit-text-fill-color:#fff!important}
+.app-shell.highContrast :is(.gradient-button,.glass-button,.form-switch,.a11y-trigger){background:#fff!important;color:#000!important;border:3px solid #fff!important}
+.app-shell.highContrast :is(.gradient-button,.glass-button,.form-switch,.a11y-trigger) :is(span){color:#000!important}
+.app-shell.highContrast :is(input,select){border:2px solid white!important}
+.app-shell.adhdFriendly main p{background:rgba(34,211,238,.11)!important;border-left:5px solid var(--cyan)!important;padding:10px 14px!important;line-height:2.05!important;margin-top:10px;margin-bottom:10px;max-width:75ch!important}
+.app-shell.adhdFriendly main :is(p,li):hover{outline:3px solid var(--pink);outline-offset:3px;background:rgba(236,72,153,.16)!important}
+.app-shell.adhdFriendly main :is(h1,h2,h3){border-bottom:3px solid var(--cyan);padding-bottom:9px}
+.app-shell.colorBlind{--pink:#0375cf;--orange:#f4bb22;--lime:#f4bb22;--cyan:#71e1ff;--violet:#0375cf}
+.app-shell.colorBlind :is(.gradient-button,.a11y-trigger,.hero-quote,.hero-iq-question,.mission-pill){background:#0566b5!important;color:#fff!important;border-color:#f4bb22!important}
+.app-shell.colorBlind :is(.hero-copy h1 span,.wordmark span){background:linear-gradient(90deg,#71e1ff,#f4bb22)!important;-webkit-background-clip:text!important;background-clip:text!important;color:transparent!important}
+.app-shell.colorBlind :is(.logo-img,.preview-brand-mark,.about-signature-logo){filter:contrast(1.25) saturate(.6) hue-rotate(140deg)!important}
+.app-shell.colorBlind .a11y-panel input{accent-color:#71e1ff!important}
+.app-shell.highlightLinks a:not(.gradient-button):not(.glass-button){color:#fff!important;background:rgba(236,72,153,.24)!important;outline:2px solid var(--pink);outline-offset:2px;text-decoration:underline!important;text-decoration-color:var(--pink)!important;text-decoration-thickness:3px!important}
+.app-shell.pauseMotion *,.app-shell.pauseMotion *::before,.app-shell.pauseMotion *::after{animation:none!important;animation-play-state:paused!important;transition:none!important;scroll-behavior:auto!important}
+.app-shell[data-caption-style="white-black"]{--caption-fg:#fff;--caption-bg:#000}
+.app-shell[data-caption-style="yellow-black"]{--caption-fg:#ff0;--caption-bg:#000}
+.app-shell[data-caption-style="black-white"]{--caption-fg:#000;--caption-bg:#fff}
+.app-shell video::cue{color:var(--caption-fg,#fff);background-color:var(--caption-bg,#000);font-family:Arial,sans-serif;text-shadow:none}
+.app-shell .caption-box{background:var(--caption-bg,#000)!important;color:var(--caption-fg,#fff)!important;text-shadow:none!important}
+@media(max-width:940px){.mission-vision-values{grid-template-columns:1fr}.form-switcher{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:780px){.a11y-panel{max-height:75vh}.about-signature-logo{height:135px}.mvv-card{padding:20px}.hero-iq-question{padding:12px 15px}}
