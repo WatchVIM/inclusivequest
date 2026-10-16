@@ -179,3 +179,9 @@
 .app-shell .caption-box{background:var(--caption-bg,#000)!important;color:var(--caption-fg,#fff)!important;text-shadow:none!important}
 @media(max-width:940px){.mission-vision-values{grid-template-columns:1fr}.form-switcher{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:780px){.a11y-panel{max-height:75vh}.about-signature-logo{height:135px}.mvv-card{padding:20px}.hero-iq-question{padding:12px 15px}}
+
+/* Keep caption theme previews legible even when another accessibility filter is active. */
+.app-shell.highContrast .caption-sample.black-white{background:#fff!important;color:#000!important;border:2px solid #000}
+.app-shell.highContrast .caption-sample.yellow-black{background:#000!important;color:#ffff00!important;border:2px solid #ffff00}
+.app-shell.highContrast .caption-sample.white-black{background:#000!important;color:#fff!important;border:2px solid #fff}
+.app-shell.highContrast .caption-box{color:var(--caption-fg,#fff)!important;background:var(--caption-bg,#000)!important}
