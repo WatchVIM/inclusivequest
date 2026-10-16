@@ -313,8 +313,8 @@ function AboutPage() {
   return <section className="page-section about-page"><div className="container">
     <section className="about-intro-grid" aria-labelledby="about-heading">
       <div><p className="eyebrow">Our mission</p><h1 id="about-heading">About Inclusive Quest</h1></div>
-      <div className="about-copy">{ABOUT.paragraphs.map((p) => <p key={p}>{p}</p>)}
-        <img className="about-signature-logo" src={BRAND.logoSrc} alt="Inclusive Quest" /></div>
+      <div className="about-copy">{ABOUT.paragraphs.map((p) => <p key={p}>{p}</p>)}</div>
+      <div className="about-signature"><img className="about-signature-logo" src={BRAND.logoSrc} alt="Inclusive Quest" /></div>
     </section>
     <section className="mission-vision-values" aria-label="Our mission, vision and values">
       {MISSION_VISION_VALUES.map((item) => <article key={item.id} className="mvv-card" id={item.id}>
