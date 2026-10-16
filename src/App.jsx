@@ -347,10 +347,10 @@ function AboutPage() {
 const POLICIES = {
   Privacy: {
     intro: 'Privacy Notice',
-    paragraphs: ['Inclusive Quest is preparing for launch. This preview site does not offer purchases or account registration.',
-      'If you email us, the information you choose to send may be used to respond to your inquiry. Please do not send sensitive personal details through email.',
-      'Publicly embedded media and external services may have their own privacy policies. A complete privacy notice will be published before account registration or online data collection goes live.',
-      'For privacy questions, contact info@inclusivequest.co.']
+    paragraphs: ['Inclusive Quest is preparing for launch. This site does not yet offer purchases or account registration.',
+      'If you email us, the information you send may be used to respond to your inquiry. Please do not send sensitive personal details through email.',
+      'Platform and podcaster application forms are hosted by Tally, a third-party form service. When you submit a form, the details you provide are collected through Tally and shared with Inclusive Quest to evaluate and respond to your inquiry. Review the privacy information provided by the form service before submitting.',
+      'This is an interim notice pending a client-approved privacy policy. For privacy questions, contact info@inclusivequest.co.']
   },
   Accessibility: {
     intro: 'Accessibility at Inclusive Quest',
@@ -361,9 +361,9 @@ const POLICIES = {
   },
   'Terms of Service': {
     intro: 'Terms of Service',
-    paragraphs: ['This website is a prelaunch preview of Inclusive Quest. Information, artwork, availability, and features may change before launch.',
+    paragraphs: ['This is the prelaunch website for Inclusive Quest. Information, artwork, availability, and features may change before launch.',
       'Content and marks are provided for informational purposes and may not be redistributed without permission of the respective rights holders.',
-      'No account, purchase, or subscription is created through the current preview site. Final platform terms will be published before those services become available.',
+      'No account, purchase, or subscription is created through the current website. Final platform terms will be published before those services become available.',
       'Contact info@inclusivequest.co with questions.']
   },
   Support: {
