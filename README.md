@@ -8,6 +8,10 @@ This repository contains the Inclusive Quest accessible-podcasts website, built 
 
 Home · About · Explore · Watch · Podcasts · For Platforms · For Podcasters · Sign In · Sign Up
 
+Home offers two distinct calls to action: **Start Watching** opens Watch, while **Start Exploring** opens the browse-and-search Explore page.
+
+**Work With Us:** the About page hosts switchable Tally forms, and the For Platforms / For Podcasters pages embed their respective forms with direct-open fallbacks. Platform submissions use https://tally.so/r/jeDMqQ; podcaster submissions use https://tally.so/r/LD1G0j. Form responses are managed in the client's Tally workspace, not this GitHub repository or the website's CMS.
+
 Footer pages: Privacy, Accessibility, Terms of Service and Support.
 
 The platform is currently in **prelaunch**. Media playback requires licensed podcast video, captions and interpreter footage. Sign-in and sign-up show launch information rather than creating accounts. The merchandise storefront is removed and cannot process purchases.
@@ -30,7 +34,7 @@ ASL is mandatory in the playback design, with captions defaulting to enabled. Th
 ## Client handover requirements
 
 Before final handover:
-1. Obtain final founder photo, official IQ brand files, licensed episode media, team information, social URLs and approved platform/podcaster forms.
+1. Obtain final founder photo, official IQ brand files, licensed episode media, team information, social URLs and approval to publish the supplied Tally forms.
 2. Replace provisional legal page copy with client-counsel-approved policies.
 3. Integrate an authenticated, client-owned CMS and train Alma Beaty on publishing, revisions and approvals.
 4. Connect a persistent newsletter system with explicit consent, confirmed privacy terms and unsubscribing. The current newsletter action opens a contact email instead of storing signups.
