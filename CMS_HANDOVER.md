@@ -1,11 +1,11 @@
 # Inclusive Quest — CMS activation and captioned handover
 
-**Status (16 October 2026): Not activated.** The React/Vite production site is connected to GitHub and Vercel. A client-facing CMS is not currently configured, and the founder has not been issued a CMS login or a captioned tutorial recording. Do not tell the client that independent editing has been enabled until each acceptance check below passes.
+**Status (18 October 2026): Preview integration in progress; production not activated.** The React/Vite production site is connected to GitHub and Vercel. A client-facing CMS is not currently configured, and the founder has not been issued a CMS login or a captioned tutorial recording. Do not tell the client that independent editing has been enabled until each acceptance check below passes.
 
 ## Ownership and setup needed
 
 - Alma Beaty / Inclusive Quest must own or explicitly approve the chosen CMS account, workspace and billing. Do not host a separate client's editable content in the WatchVIM Supabase production database.
-- Select a hosted, user-friendly CMS with rich-text, image uploads, video metadata, and editor roles (for example, Sanity or Contentful). Obtain an admin invite or approved connection; add Alma as Owner/Admin and an editor account for handover testing.
+- The approved backend is the client-owned Inclusive Quest Supabase project. Alma owns the organization and is the approved website publisher; Anthony is the approved website test editor. Website roles and dashboard roles are separate.
 - Configure draft/publish and revision history, with a staging preview and rollback plan.
 - Model editable collections: Homepage hero and CTA copy, About text, Mission/Vision/Values, founder profile and portrait, team biographies/photos, testimonials, pages and metadata, podcasts/videos with captions and Sign Language video references, footer links/tagline, and the client-provided Tally form URLs.
 - Use an image upload service under the client's control and record alternative text; add video hosting only after Alma selects YouTube or Vimeo or another approved provider.
@@ -49,6 +49,6 @@ Until the CMS is live, editors must request a reviewed GitHub content change (se
 - The client's final clarification/example for the placeholder interpreter-area artwork.
 - The recorded, accurately captioned CMS walkthrough and successful independent editor acceptance test.
 
-## 18 October 2026 foundation update
+## 18 October 2026 integration update
 
-The basic same-site admin review workspace and shared public content adapter are implemented in the admin foundation branch. This does not change the activation status above: authentication, database persistence, secure media uploads, publishing, real editor access and the captioned recording are still pending. [ADMIN_SETUP.md](ADMIN_SETUP.md) documents what can be reviewed now, the proposed client-owned Supabase integration, and the remaining acceptance checks. Local/Vercel preview drafts never alter the production website.
+The basic same-site admin now includes Supabase Auth integration, persistent draft/publication RPCs, private image upload, revision history and a shared public content/media reader in PR 6. The client-owned Supabase project and named website roles are approved. Owner-only Auth settings, secure preview configuration, invitations and real end-to-end acceptance still gate activation. See [ADMIN_SETUP.md](ADMIN_SETUP.md) for the current exact setup and verification checklist; its narrower implemented field list supersedes the earlier proposed collection list above. No captioned recording or independent client acceptance is complete. Production release remains separate.

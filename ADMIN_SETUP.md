@@ -1,97 +1,84 @@
-# Inclusive Quest admin foundation
+# Inclusive Quest admin setup
 
-## Current status
+## Status: preview integration, not a production handover
 
-This is a **reviewable foundation, not a live CMS handover**. No backend project, database, credentials, editor accounts, paid service or production deployment was created by this change. The existing public content remains the fallback.
+PR 6 adds the same-site `/admin`, Supabase Auth, server drafts, role-checked publication, revision history, private image uploads and public content/media endpoints. The existing site remains the fallback until the approved client project and this branch's Preview environment are connected and tested. No production merge or activation is included.
 
-- `/admin` is a separate lazy-loaded entry on the same website. Production displays a locked setup screen.
-- Local development and Vercel Preview builds offer an explicitly labelled review workspace. It is public demo UI, **not authentication**. Do not enter private content.
-- Draft changes live in memory for the current tab. They are **not** stored in localStorage, sent to a server, or published. Reloading loses them unless a draft JSON file is downloaded. Import restores a review file without creating a published snapshot.
-- Editable: existing home heading/subtitle/body/featured image, About introduction, Mission/Vision/Values, founder bio/story/photo/alt text, testimonials, basic blog posts with three starting templates, YouTube episode metadata/image/alt text, categories and tags.
-- Other existing page copy remains in `App.jsx` and `content.js`; this first pass does not claim to expose every field. Image upload, login, real draft saving, publishing, revisions and staff permissions remain unavailable.
-- Draft preview renders the **actual website** through the same adapter used by public pages. Watch, Podcasts and Explore read the common episode model. Blog navigation appears when posts exist.
-- Existing licensed episode/interpreter video pairs take priority. Otherwise a validated YouTube entry renders a click-to-load privacy-enhanced player and a direct YouTube link. Captions and Sign Language content must be verified on the supplied video; link validation cannot guarantee their presence or availability.
+Approved client project: **Inclusive Quest**, `xkdmvbwkaaxjgasitbwv` (client-owned organization `oqfctuptaaveuoftfelq`). Never substitute the WatchVIM database. Approved website roles are Alma `info@inclusivequest.co` as publisher and Anthony `abawn@watchvim.us` as test editor. Supabase organization roles are separate from website roles.
 
-## Review workflow
+Preview: https://inclusivequest-git-feat-admin-review-foundation-watch-vim-ott.vercel.app/admin
 
-1. Open the branch's preview URL at `/admin`, then choose **Open review workspace**.
-2. Choose a content section, edit fields, and select **Keep draft in this tab**. This wording deliberately distinguishes temporary review state from real CMS persistence.
-3. Choose **Preview website**. Navigate to Watch/Explore/Podcasts to check a YouTube draft, or Blog to check a new post. Close returns to the editor without changing the browser URL.
-4. Choose **View published reference** to compare with the original content. This is the bundled reference snapshot, not a read from a live CMS.
-5. **Download drafts** keeps a JSON review file. **Import draft file** restores one in a later session after confirmation. Downloaded files may contain anything you typed, so keep them private.
-6. Publish and upload stay disabled. A review file never changes the public site.
+The preview requires authorized Vercel access. A successful deployment build does not establish that a recipient can open it. Do not disable deployment protection or create bearer sharing links to work around access.
 
-## Recommended activation path: a new client-owned Supabase project
+## What is implemented
 
-Use a dedicated Inclusive Quest organization/project, owned and billed by the client. The client is preparing the Free project; no paid subscription is required or authorized by this PR. Confirm region, staff identities and roles before implementation. Do not connect the WatchVIM production database.
+- Editable home heading/subtitle/body/image, About introduction, Mission/Vision/Values, founder bio/story/photo/alt text, testimonials, blog posts with three templates, YouTube episode titles/descriptions/links/images/categories/tags and video categories.
+- Magic-link login for invited accounts; live membership checked on every operation. Editors save drafts; publishers additionally publish/unpublish. Public signup must be disabled in Auth.
+- Persistent drafts, optimistic revision conflicts, operation-ID retry protection, immutable history and restore-to-draft. Draft previews render the actual website components.
+- JPEG/PNG/WebP uploads up to **4,000,000 bytes**, with alternative text and file-signature checks. Private storage uses immutable paths. Only images referenced by currently published content are anonymously downloadable through `/api/media`.
+- `/api/content` returns separate published snapshots only, using the publishable key without forwarding visitor/staff credentials. Full published snapshots are limited to **3,500,000 UTF-8 bytes** to stay below Vercel response limits.
+- Watch, Explore and Podcasts use the same published episode model. Existing approved dual main/interpreter videos are preserved. Otherwise a validated YouTube URL provides a click-to-load privacy-enhanced player. Link validation cannot guarantee licensing, availability, captions or Sign Language interpretation; YouTube caption appearance cannot be forced.
+- Fail-closed setup: missing/invalid/wrong-project configuration cannot enable save, publish or upload. Preview/dev can still offer the explicitly labelled temporary review workspace; production cannot open that review workspace.
 
-Recommended server contract:
+Other hardcoded copy, sponsorship features, additional accessibility work and the captioned training recording are outside this implementation. The existing founder-photo reference has no file and still needs an approved image.
 
-- `content_drafts`: authenticated authorized staff only. Store type, schema version, validated JSON, revision, actor and timestamps.
-- `content_published`: separate published snapshots. Anonymous reads are allowed only for deliberately published rows; never put draft fields in publicly readable rows.
-- `content_revisions`: immutable snapshots and server-generated audit actor/time/action. Restore creates a new draft, never silently changes published content.
-- Trusted membership roles: editor can save drafts; publisher can publish/unpublish. Database grants and Row Level Security must enforce this server-side. Browser UI flags and editable user metadata are not authority.
-- Atomic publication: authenticate, authorize, validate, check expected revision, record a revision, and replace the published snapshot in one transaction. Add CSRF protection where cookie sessions are used and check request origin.
-- Images: private draft storage with file type/size limits and authorization. Release approved assets to public storage only during publication. Store descriptive alt text per placement; document decorative exceptions explicitly.
-- Never put a secret/service-role key in a `VITE_` variable, source code, a review JSON file or chat. Use approved secure credentials/configuration. A project URL/publishable key alone does not enforce access; test RLS.
-- Configure approved email delivery before real editor invitations, sign-in links and recovery. Supabase's default SMTP is for testing, not a general production mail service.
+## Activation steps
 
-### Public reader boundary
+1. Review `supabase/schema/cms.sql` and `supabase/README.md`. Apply only to the approved client project after its compatibility checks. Never apply `supabase/tests/bootstrap.sql` remotely. Keep `cms_private` out of exposed schemas and extra search paths. The SQL is transactional and does not initialize/publish content or create users on application.
+2. A project Owner must configure Authentication → Sign In / Providers: turn **Allow new users to sign up OFF**; keep **Confirm email ON** and anonymous sign-ins OFF. Anthony's current Developer role cannot edit these settings.
+3. Under Authentication → URL Configuration, use the exact preview URL above as Site URL and add the same `/admin` URL to Redirect URLs. Do not add wildcards or production callbacks for this review. Current localhost defaults must be replaced before invitations.
+4. In the **Inclusive Quest Vercel project, Preview environment restricted to branch `feat/admin-review-foundation`**, securely enter the values in `.env.example`: `VITE_CMS_ENABLED=true`, the exact client Supabase URL, and its existing `sb_publishable_...` key. Do not put keys in chat, Git, screenshots or handover files. Do not use `sb_secret_...`, service-role or legacy JWT keys. Keep Production and other branches unconfigured. A new preview build is needed after build-time environment changes.
+5. Once callback and protected-preview access work, send only the two approved Supabase invitations. The exact default invitation template/recipients must have been previewed and approved. Verify each Auth UUID, then insert the matching approved website role into `cms_members` via the trusted operator path. There is no client membership editor.
+6. A publisher confirms **Import current website content** once. SQL accepts only the reviewed current baseline, imports it atomically and activates the published reader. All editing/uploads are blocked before this step. No imported draft JSON can become a publication.
+7. Complete the real Auth, Storage, persistence and public-site acceptance checks below before describing the admin as ready for independent editing.
 
-`src/cms/public-reader.js` is backend-independent. Once the approved backend endpoint exists, `VITE_CMS_ENABLED=true` enables a same-origin GET to `/api/content`. Leave it unset until the endpoint is ready; it is not an admin authorization flag. No endpoint is implemented in this foundation.
+No paid services are required for preview setup. Supabase default email delivery is testing-only, limited to organization member addresses and currently two messages/hour; these two approved addresses are organization members. Invitations/sign-in may exhaust that allowance. Production delivery requires a separately approved reliable SMTP setup. Do not buy or provision one implicitly.
 
-The endpoint must return JSON:
+### Auth callback behavior
 
-```json
-{
-  "schemaVersion": 1,
-  "documents": [
-    { "id": "episode-example", "type": "episode", "published": {
-      "title": "Show title", "episodeTitle": "Episode title", "description": "Description",
-      "youtubeUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", "category": "Podcast",
-      "tags": ["accessibility"], "imageSrc": "", "imageAlt": ""
-    }}
-  ]
-}
-```
+Normal sign-in uses PKCE and should be opened in the same browser that requested the link. Supabase admin invitation links use an implicit callback, which the installed SDK does not accept under a fixed PKCE client. The repository therefore selects implicit mode only for an invitation token callback; the SDK verifies the session and consumes/clears the fragment. The next page load returns to PKCE. A single invitation-opened client instance retains its mode until reload. No application code logs or exports tokens. Invalid/expired callbacks surface a sign-in error rather than being treated as success.
 
-The example video ID is a test fixture, not approved site content. Responses containing a `draft` property, unknown schemas, invalid fields or duplicate IDs are rejected. Failed/HTML/invalid responses fall back to existing bundled content. Valid empty collections stay empty, while required site singleton copy uses its bundled fallback. Define cache invalidation and failed-endpoint monitoring during backend activation so a stale fallback is not mistaken for a successful publication.
+The SDK stores its session using its normal browser storage mechanism; this is authentication state, not a substitute for the server's membership checks/RLS. Draft fields and signed image preview URLs are kept only in memory. Signed previews expire after 300 seconds in the application; this is not an RLS-enforced maximum. Previously shared/downloaded copies cannot be recalled.
 
-`src/cms/admin-repository.js` intentionally rejects every mutation and returns no session. Replace this only with authenticated, authorized operations after the project and security setup are approved; do not “enable” persistence by switching these booleans.
+## Editor workflow
+
+1. Sign in with the invited email. A project dashboard login alone does not grant website editing access.
+2. Select a section, edit and **Save draft**. Save confirmation means server persistence; it does not publish. Resolve conflicts by preserving your changes and reloading the saved version.
+3. For an image, write alternative text, upload a supported image, then save the draft to attach it. Removing an image from fields does not delete its stored object.
+4. **Preview website** renders saved drafts. **View published website** excludes draft-only/unsaved changes. Reopen expired image previews to refresh their short-lived links.
+5. A publisher reviews and confirms **Publish**. Reload the preview's public page to verify the published title/text/video/image. Publishing does not automatically refresh an already-open public tab.
+6. **Unpublish** removes the published collection entry while preserving drafts/history. Required pages and founder content fall back to bundled defaults. **Revision history → Restore as draft** does not publish.
+7. Sign out when finished. Unsaved fields are lost after sign-out/reload; session expiry hides fields and preserves them only in the same open tab until reauthentication.
+
+### Preview and later production separation
+
+During this review only the preview is connected. A deployment label is not database isolation: two deployments connected to the same project share published content. Before a separately approved production release, establish an isolated staging project or disconnect preview writes and revise the environment messaging/roles. Do not silently point a writable preview at the future production CMS.
 
 ## Verification
 
+Run with Node 22:
+
 ```sh
 npm ci
-npm run test
+npm test
 npm run build
 npx playwright install chromium
 npm run test:browser
 ```
 
-Browser tests start a development review server and a separately built production server, and run desktop/mobile flows. On a machine with an existing Chromium binary, set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to its path. GitHub Actions also installs the browser dependencies and runs this suite. A sandbox-blocked local browser run is not a passing browser check.
+Automated tests cover the actual embedded PostgreSQL schema/RLS, membership/revocation, anonymous/editor/publisher restrictions, exact baseline initialization, validation, draft/published separation, concurrency checks, idempotency, revisions, private storage policies, API response budgets, repository transport and admin DOM flows. Browser fixtures cover authenticated desktop/mobile behavior but do not replace live Supabase acceptance.
 
-Coverage includes URL/alt-text validation, draft isolation, review import/export, public snapshot parsing/fallback, fail-closed mutation methods, production editor gating, field-change cancellation, actual website previews, click-to-load YouTube, blog templates, and an automated admin accessibility scan. Real YouTube playback rights and availability are not exercised by the mocked player fixture.
+### Required live acceptance
 
-## Acceptance checks before activation/handover
+- Both named accounts independently accept invitations/sign in; uninvited/nonmember accounts fail closed. Exercise expired links and revoked membership.
+- Editor save survives reload/sign-out; public content stays unchanged until publisher approval. Two simultaneous stale edits cannot silently overwrite each other.
+- Publish an approved YouTube test entry, verify Watch/Explore/Podcasts title, description, categories/tags, captions/Sign Language availability; edit/unpublish and verify the public read excludes drafts.
+- Upload real JPEG/PNG/WebP including a near-4 MB image. Verify anonymous draft download/sign/list denial, staff preview, published download, and denial after last-reference unpublish. Check oversized/SVG/false MIME/overwrite/delete rejection against the real Storage HTTP service.
+- Verify anonymous direct RPC/table requests cannot read drafts/history/assets or mutate data; editors cannot grant membership or publish. Check API/private schema exposure and security advisors.
+- Test protected Vercel `/admin` deep links, mobile, keyboard/focus, screen reader and actual video playback; record the accurately captioned handover after these pass.
 
-1. Client approves custom-site CMS architecture and final basic scope; sponsorship functionality remains excluded.
-2. Approved client-owned project, editor/publisher identities, role/security setup, credentials and email delivery are connected.
-3. Anonymous/non-staff cannot read drafts or write content; editors cannot promote themselves or publish. Test direct API requests, not only the UI.
-4. A named editor signs in independently; draft survives sign-out/reload; published version stays unchanged until publish; concurrent edit conflict and expired session are handled.
-5. Publish a licensed test YouTube episode. Verify title, description, categories/tags, video availability, captions and Sign Language content on desktop/mobile; edit and unpublish without leaking drafts.
-6. Upload/replace an image and alt text; validate size/type and draft asset privacy; test revisions/restore and publication rollback.
-7. Review remaining copy, founder photo and approved media; complete human keyboard/screen-reader checks and a captioned recorded walkthrough.
-8. Approve merge and production release separately. This draft PR does not authorize either.
-
-Official implementation references: [React/Vite quickstart](https://supabase.com/docs/guides/getting-started/quickstarts/reactjs), [API keys](https://supabase.com/docs/guides/api/api-keys), [RLS](https://supabase.com/docs/guides/database/postgres/row-level-security), [role-based access](https://supabase.com/docs/guides/api/custom-claims-and-role-based-access-control-rbac), [Storage access](https://supabase.com/docs/guides/storage/buckets/fundamentals), [SMTP](https://supabase.com/docs/guides/auth/auth-smtp).
-
-### Verification status for this foundation (18 October 2026)
-
-The existing content checks, 20 model/DOM/routing tests, and production bundle build pass. DOM tests exercise draft navigation/cancellation, published-reference comparison, URL/storage isolation, and adding a YouTube episode through the actual website components. They are not a substitute for real browser rendering/accessibility checks.
-
-The desktop/mobile Playwright suite is present but has not run successfully: this workspace blocks Chromium's required Unix socket; GitHub Actions reported that the repository owner's account is locked due to a billing issue before any job steps started. The Vercel preview build is READY but requires an authorized Vercel session. No deployment protection has been disabled and no temporary sharing link was created. Complete real-browser QA before release.
+Known QA constraints: local Chromium launch is blocked by Unix-socket permissions, and GitHub Actions previously failed before starting due to the account's billing lock. An authenticated Vercel preview session is still required. Neither a DOM pass nor a build pass is proof of end-to-end readiness.
 
 ### Vercel route compatibility
 
-`cleanUrls: true` removes HTML extensions before Vercel resolves rewrites. Therefore `/admin` and `/admin/` target `/index`, not `/index.html`. The deployment-routing regression test preserves this pairing. Vite's local fallback server does not reproduce this Vercel-specific behavior; a successful local deep-link test alone is insufficient.
+With `cleanUrls: true`, `/admin` and `/admin/` rewrite to `/index`, not `/index.html`. Vite's local fallback does not reproduce this deployment-specific behavior. API routes are separate Vercel Functions and must be verified on the deployed preview.
