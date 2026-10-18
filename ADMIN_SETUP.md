@@ -88,6 +88,10 @@ Official implementation references: [React/Vite quickstart](https://supabase.com
 
 ### Verification status for this foundation (18 October 2026)
 
-The existing content checks, 19 model/DOM interaction tests, and production bundle build pass. DOM tests exercise draft navigation/cancellation, published-reference comparison, URL/storage isolation, and adding a YouTube episode through the actual website components. They are not a substitute for real browser rendering/accessibility checks.
+The existing content checks, 20 model/DOM/routing tests, and production bundle build pass. DOM tests exercise draft navigation/cancellation, published-reference comparison, URL/storage isolation, and adding a YouTube episode through the actual website components. They are not a substitute for real browser rendering/accessibility checks.
 
 The desktop/mobile Playwright suite is present but has not run successfully: this workspace blocks Chromium's required Unix socket; GitHub Actions reported that the repository owner's account is locked due to a billing issue before any job steps started. The Vercel preview build is READY but requires an authorized Vercel session. No deployment protection has been disabled and no temporary sharing link was created. Complete real-browser QA before release.
+
+### Vercel route compatibility
+
+`cleanUrls: true` removes HTML extensions before Vercel resolves rewrites. Therefore `/admin` and `/admin/` target `/index`, not `/index.html`. The deployment-routing regression test preserves this pairing. Vite's local fallback server does not reproduce this Vercel-specific behavior; a successful local deep-link test alone is insufficient.

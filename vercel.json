@@ -3,6 +3,25 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "cleanUrls": true,
-  "rewrites": [{ "source": "/admin", "destination": "/index.html" }, { "source": "/admin/", "destination": "/index.html" }],
-  "headers": [{ "source": "/admin", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] }]
+  "rewrites": [
+    {
+      "source": "/admin",
+      "destination": "/index"
+    },
+    {
+      "source": "/admin/",
+      "destination": "/index"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/admin",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    }
+  ]
 }
