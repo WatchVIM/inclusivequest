@@ -42,6 +42,8 @@ test('validates titles, tags, slugs, text limits and templates', () => {
   assert.ok(validateDocument('post', {...createDraft('post','post-one').draft, title:'Story', slug:'Invalid Slug', excerpt:'Summary', template:'unknown'}).slug);
   assert.ok(validateDocument('post', {...createDraft('post','post-one').draft, title:'Story', slug:'story', excerpt:'Summary', template:'unknown'}).template);
   assert.throws(() => createDraft('dangerous','abc'));
+  assert.throws(() => createDraft('post',undefined));
+  assert.throws(() => createDraft('post',123));
 });
 
 test('publication readiness allows validated YouTube or paired licensed media', () => {
@@ -68,6 +70,7 @@ test('review download/import preserves drafts without manufacturing published re
 test('draft imports reject malformed, oversized, duplicate and type-changing files', () => {
   const records = createSeedDocuments(); const payload = JSON.parse(exportDrafts(records));
   assert.throws(() => importDrafts('{bad',records));
+  assert.throws(() => importDrafts(JSON.stringify({...payload,drafts:[{type:'episode',data:episode()}]}),records));
   assert.throws(() => importDrafts('x'.repeat(1024*1024+1),records));
   assert.throws(() => importDrafts(JSON.stringify({...payload,schemaVersion:2}),records));
   assert.throws(() => importDrafts(JSON.stringify({...payload,drafts:[...payload.drafts,payload.drafts[0]]}),records));

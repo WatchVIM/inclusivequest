@@ -116,7 +116,7 @@ export function createSeedDocuments() {
 }
 
 export function createDraft(type, id, template = 'story') {
-  if (!CONTENT_TYPES.includes(type) || !ID.test(id)) throw new Error('Invalid content type or ID.');
+  if (!CONTENT_TYPES.includes(type) || typeof id !== 'string' || !ID.test(id)) throw new Error('Invalid content type or ID.');
   const image = { imageSrc: '', imageAlt: '' };
   const defaults = {
     page: { title: '', slug: '', heading: '', subtitle: '', body: '', ...image },
@@ -133,7 +133,7 @@ export function validateDraftCollection(records) {
   if (!Array.isArray(records) || records.length > 250) throw new Error('A review can contain at most 250 records.');
   const ids = new Set(); const slugs = new Set();
   for (const record of records) {
-    if (!record || !ID.test(record.id) || ids.has(record.id)) throw new Error('Every record needs a unique, valid ID.');
+    if (!record || typeof record.id !== 'string' || !ID.test(record.id) || ids.has(record.id)) throw new Error('Every record needs a unique, valid ID.');
     ids.add(record.id);
     const errors = validateDocument(record.type, record.draft);
     if (Object.keys(errors).length) throw new Error(`${documentTitle(record)}: ${Object.values(errors)[0]}`);
@@ -159,7 +159,7 @@ export function importDrafts(json, currentRecords) {
   const payload = JSON.parse(json);
   if (payload.schemaVersion !== SCHEMA_VERSION || payload.kind !== 'inclusive-quest-draft-review' || !Array.isArray(payload.drafts)) throw new Error('This is not a supported Inclusive Quest draft review file.');
   const incoming = payload.drafts.map(item => {
-    if (!item || typeof item !== 'object' || !ID.test(item.id)) throw new Error('Invalid draft record.');
+    if (!item || typeof item !== 'object' || typeof item.id !== 'string' || !ID.test(item.id)) throw new Error('Invalid draft record.');
     const current = currentRecords.find(record => record.id === item.id);
     if (current && current.type !== item.type) throw new Error('An existing content type cannot be changed by import.');
     return { id: item.id, type: item.type, draft: clone(item.data), published: current?.published || null, revision: current ? current.revision + 1 : 1 };
