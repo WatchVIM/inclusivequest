@@ -48,3 +48,7 @@ Until the CMS is live, editors must request a reviewed GitHub content change (se
 - Approved hosting choice for videos, and real captions and Sign Language media.
 - The client's final clarification/example for the placeholder interpreter-area artwork.
 - The recorded, accurately captioned CMS walkthrough and successful independent editor acceptance test.
+
+## 18 October 2026 foundation update
+
+The basic same-site admin review workspace and shared public content adapter are implemented in the admin foundation branch. This does not change the activation status above: authentication, database persistence, secure media uploads, publishing, real editor access and the captioned recording are still pending. [ADMIN_SETUP.md](ADMIN_SETUP.md) documents what can be reviewed now, the proposed client-owned Supabase integration, and the remaining acceptance checks. Local/Vercel preview drafts never alter the production website.

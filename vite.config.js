@@ -1,9 +1,10 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [react()],
-  server: {
-    port: 5173
-  }
-});
+  // A public review workspace is never an authentication mechanism. Production
+  // keeps this off, even if a stray VITE_ flag is configured.
+  define: { __ADMIN_PREVIEW_ENABLED__: JSON.stringify(command === 'serve' || process.env.VERCEL_ENV === 'preview') },
+  server: { port: 5173 }
+}));
