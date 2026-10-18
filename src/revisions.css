@@ -188,3 +188,37 @@
 
 .about-signature{grid-column:1/-1;display:flex;justify-content:center;align-items:center;margin:10px auto 0;width:100%}
 .about-signature-logo{margin:0 auto}
+
+/* Center the complete footer on phones without changing the desktop layout. */
+@media (max-width: 780px) {
+  .site-footer {
+    /* Leave room for the fixed accessibility control below the copyright. */
+    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  }
+  .site-footer .footer-inner {
+    align-items: center;
+    text-align: center;
+  }
+  .site-footer .footer-brand {
+    width: 100%;
+  }
+  .site-footer .logo-mark {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .site-footer .footer-brand .logo-copy {
+    display: block;
+    max-width: 100%;
+  }
+  .site-footer .wordmark {
+    white-space: normal;
+  }
+  .site-footer .footer-links {
+    width: 100%;
+    justify-content: center;
+  }
+  .site-footer .footer-links a {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+}
