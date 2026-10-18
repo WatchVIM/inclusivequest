@@ -120,3 +120,9 @@ test('admin persistence, authentication, image upload and publishing fail closed
   assert.deepEqual(adminRepository.capabilities,{signIn:false,saveDraft:false,publish:false,upload:false});
   for (const action of ['signIn','saveDraft','publish','upload']) await assert.rejects(()=>adminRepository[action](),SetupRequiredError);
 });
+
+test('every successfully exported review can fit through the import size boundary', () => {
+  const records = createSeedDocuments();
+  for (let index=0;index<30;index++) records.push({id:`post-large-${index}`,type:'post',draft:{...createDraft('post',`post-large-${index}`).draft,title:`Large post ${index}`,slug:`large-post-${index}`,excerpt:'A summary.',body:'x'.repeat(39000)},published:null,revision:1});
+  assert.throws(()=>exportDrafts(records), /1 MB import limit/);
+});

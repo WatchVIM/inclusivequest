@@ -85,3 +85,9 @@ Coverage includes URL/alt-text validation, draft isolation, review import/export
 8. Approve merge and production release separately. This draft PR does not authorize either.
 
 Official implementation references: [React/Vite quickstart](https://supabase.com/docs/guides/getting-started/quickstarts/reactjs), [API keys](https://supabase.com/docs/guides/api/api-keys), [RLS](https://supabase.com/docs/guides/database/postgres/row-level-security), [role-based access](https://supabase.com/docs/guides/api/custom-claims-and-role-based-access-control-rbac), [Storage access](https://supabase.com/docs/guides/storage/buckets/fundamentals), [SMTP](https://supabase.com/docs/guides/auth/auth-smtp).
+
+### Verification status for this foundation (18 October 2026)
+
+The existing content checks, 19 model/DOM interaction tests, and production bundle build pass. DOM tests exercise draft navigation/cancellation, published-reference comparison, URL/storage isolation, and adding a YouTube episode through the actual website components. They are not a substitute for real browser rendering/accessibility checks.
+
+The desktop/mobile Playwright suite is present but has not run successfully: this workspace blocks Chromium's required Unix socket; GitHub Actions reported that the repository owner's account is locked due to a billing issue before any job steps started. The Vercel preview build is READY but requires an authorized Vercel session. No deployment protection has been disabled and no temporary sharing link was created. Complete real-browser QA before release.

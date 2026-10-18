@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import App from '../App.jsx';
 import { ContentProvider } from '../cms/ContentProvider.jsx';
 import { adminRepository } from '../cms/admin-repository.js';
@@ -27,11 +28,11 @@ function Dialog({ title, onClose, children, wide = false }) {
     dialog.showModal();
     return () => { dialog.close(); previous?.focus(); };
   }, []);
-  return <dialog ref={ref} className={'admin-dialog' + (wide ? ' admin-dialog-wide' : '')}
+  return createPortal(<dialog ref={ref} className={'admin-dialog' + (wide ? ' admin-dialog-wide' : '')}
     aria-label={title} onCancel={event => { event.preventDefault(); onClose(); }}>
     <div className="admin-dialog-heading"><h2>{title}</h2><button type="button" onClick={onClose} aria-label={`Close ${title}`}>Close ×</button></div>
     {children}
-  </dialog>;
+  </dialog>, document.body);
 }
 
 function Field({ name, label, type, value, onChange, error, categories, fixedSlug }) {
@@ -55,6 +56,7 @@ function Field({ name, label, type, value, onChange, error, categories, fixedSlu
 export default function AdminApp() {
   const [entered, setEntered] = useState(false);
   const [records, setRecords] = useState(createSeedDocuments);
+  const [newRecord, setNewRecord] = useState(null);
   const [section, setSection] = useState('page');
   const [selectedId, setSelectedId] = useState('page-home');
   const [form, setForm] = useState(() => clone(createSeedDocuments()[0].draft));
@@ -67,9 +69,10 @@ export default function AdminApp() {
   const [postTemplate, setPostTemplate] = useState('story');
   const importRef = useRef(null);
   const messageRef = useRef(null);
-  const selected = records.find(record => record.id === selectedId);
+  const allRecords = newRecord ? [...records, newRecord] : records;
+  const selected = allRecords.find(record => record.id === selectedId);
   const workingForm = selected?.type === 'episode' ? { ...form, tags: [...new Set(tagsText.split(',').map(tag => tag.trim()).filter(Boolean))] } : form;
-  const dirty = Boolean(selected && JSON.stringify(workingForm) !== JSON.stringify(selected.draft));
+  const dirty = Boolean(selected && (newRecord || JSON.stringify(workingForm) !== JSON.stringify(selected.draft)));
   const hasChanges = dirty || records.some(hasDraftChanges);
   const allowReview = typeof __ADMIN_PREVIEW_ENABLED__ !== 'undefined' && __ADMIN_PREVIEW_ENABLED__;
   const publishIssues = selected ? publicationIssues(selected.type, workingForm) : {};
@@ -88,14 +91,14 @@ export default function AdminApp() {
 
   const announce = text => { setMessage(text); };
   const selectRecord = (record, nextSection = record?.type || section) => {
-    setSection(nextSection); setSelectedId(record?.id || null); setForm(clone(record?.draft || {}));
+    setNewRecord(null); setSection(nextSection); setSelectedId(record?.id || null); setForm(clone(record?.draft || {}));
     setTagsText(record?.draft.tags?.join(', ') || ''); setErrors({}); setSearch('');
   };
-  const guard = action => { if (dirty) setPending({ action, title: 'Discard unsaved field changes?', description: 'Your last kept draft will remain in this tab. The changes currently in the fields will be discarded.' }); else action(); };
+  const guard = action => { if (dirty) setPending({ action, title: 'Discard unsaved field changes?', description: newRecord ? 'This new draft has not been kept. Its field changes will be discarded.' : 'Your last kept draft will remain in this tab. The changes currently in the fields will be discarded.' }); else action(); };
   const changeSection = type => guard(() => selectRecord(records.find(record => record.type === type), type));
   const addRecord = () => guard(() => {
     const record = createDraft(section, `${section}-${crypto.randomUUID()}`, postTemplate);
-    setRecords(previous => [...previous, record]); selectRecord(record); announce('New draft. Complete the fields and keep it in this tab.');
+    setNewRecord(record); setSelectedId(record.id); setForm(clone(record.draft)); setTagsText(''); setErrors({}); setSearch(''); announce('New draft. Complete the fields and keep it in this tab.');
   });
   const saveDraft = event => {
     event?.preventDefault();
@@ -103,9 +106,10 @@ export default function AdminApp() {
     const nextErrors = validateDocument(selected.type, workingForm);
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) { announce('Please fix the highlighted fields before keeping this draft.'); setTimeout(() => document.getElementById(`editor-${Object.keys(nextErrors)[0]}`)?.focus(), 0); return; }
-    const next = records.map(record => record.id === selected.id ? { ...record, draft: clone(workingForm), revision: record.revision + 1 } : record);
+    const kept = { ...selected, draft: clone(workingForm), revision: selected.revision + 1 };
+    const next = newRecord ? [...records, kept] : records.map(record => record.id === selected.id ? kept : record);
     try { validateDraftCollection(next); } catch (error) { announce(error.message); return; }
-    setRecords(next); setForm(clone(workingForm));
+    setRecords(next); setNewRecord(null); setForm(clone(workingForm));
     announce('Draft kept in this tab only. Download a draft file to keep a copy. Nothing was published.');
   };
   const openPreview = mode => {
@@ -150,7 +154,7 @@ export default function AdminApp() {
     </section>
   </main>;
 
-  const visible = records.filter(record => record.type === section && documentTitle(record).toLowerCase().includes(search.trim().toLowerCase()));
+  const visible = allRecords.filter(record => record.type === section && documentTitle(record).toLowerCase().includes(search.trim().toLowerCase()));
   const categories = [...new Set(records.filter(record => record.type === 'category').map(record => record.draft.name).filter(Boolean))];
   return <div className="admin-root">
     <a href="#admin-editor" className="admin-skip">Skip to editor</a>
@@ -162,7 +166,7 @@ export default function AdminApp() {
     </header>
     <div className="admin-layout">
       <aside className="admin-sidebar"><p className="admin-kicker">Workspace</p><nav aria-label="Content sections">
-        {CONTENT_TYPES.map(type => <button key={type} className={section === type ? 'active' : ''} aria-current={section === type ? 'page' : undefined} onClick={() => changeSection(type)}><span>{TYPE_LABELS[type]}</span><span>{records.filter(record => record.type === type).length}</span></button>)}
+        {CONTENT_TYPES.map(type => <button key={type} className={section === type ? 'active' : ''} aria-current={section === type ? 'page' : undefined} onClick={() => changeSection(type)}><span>{TYPE_LABELS[type]}</span><span>{allRecords.filter(record => record.type === type).length}</span></button>)}
       </nav><div className="admin-connection"><span className="admin-lock" aria-hidden="true">○</span><strong>Publishing locked</strong><p>Client-owned Supabase setup and editor permissions are still required.</p></div></aside>
       <main className="admin-main" id="admin-editor">
         <div className="admin-section-heading"><div><p className="admin-kicker">Make every story accessible</p><h1>{TYPE_LABELS[section]}</h1></div>
@@ -172,7 +176,7 @@ export default function AdminApp() {
         <div ref={messageRef} className={'admin-message' + (message ? ' visible' : '')} role="status" aria-live="polite">{message}</div>
         <div className="admin-editor-grid">
           <section className="admin-records" aria-label={`${TYPE_LABELS[section]} list`}><label htmlFor="admin-search">Find content</label><input id="admin-search" type="search" placeholder="Search this section" value={search} onChange={event => setSearch(event.target.value)} />
-            {visible.length ? <ul>{visible.map(record => <li key={record.id}><button aria-pressed={selectedId === record.id} onClick={() => guard(() => selectRecord(record))}><strong>{documentTitle(record)}</strong><span>{documentStatus(record)}</span></button></li>)}</ul> : <p className="admin-empty">{search ? 'No matching content.' : 'No content here yet. Add your first draft.'}</p>}
+            {visible.length ? <ul>{visible.map(record => <li key={record.id}><button aria-pressed={selectedId === record.id} onClick={() => { if (record.id !== selectedId) guard(() => selectRecord(record)); }}><strong>{documentTitle(record)}</strong><span>{documentStatus(record)}</span></button></li>)}</ul> : <p className="admin-empty">{search ? 'No matching content.' : 'No content here yet. Add your first draft.'}</p>}
           </section>
           {selected ? <section className="admin-edit-panel" aria-labelledby="edit-title">
             <div className="admin-edit-title"><div><span className="admin-status">{dirty ? 'Unsaved field changes' : documentStatus(selected)}</span><h2 id="edit-title">{documentTitle(selected)}</h2></div><small>Local draft {selected.revision}</small></div>

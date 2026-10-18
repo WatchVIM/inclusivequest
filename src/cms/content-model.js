@@ -148,7 +148,9 @@ export function validateDraftCollection(records) {
 
 export function exportDrafts(records) {
   validateDraftCollection(records);
-  return JSON.stringify({ schemaVersion: SCHEMA_VERSION, kind: 'inclusive-quest-draft-review', drafts: records.map(({id, type, draft, revision}) => ({ id, type, data: draft, revision })) }, null, 2);
+  const json = JSON.stringify({ schemaVersion: SCHEMA_VERSION, kind: 'inclusive-quest-draft-review', drafts: records.map(({id, type, draft, revision}) => ({ id, type, data: draft, revision })) }, null, 2);
+  if (new TextEncoder().encode(json).length > 1024 * 1024) throw new Error('The draft review exceeds the 1 MB import limit. Reduce the content size before downloading a restorable file.');
+  return json;
 }
 
 /** Import is a review-only merge. A file cannot manufacture published content. */
