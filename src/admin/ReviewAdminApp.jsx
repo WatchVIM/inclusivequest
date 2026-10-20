@@ -109,6 +109,7 @@ export default function ReviewAdminApp() {
       {allowReview ? <><button className="admin-primary" onClick={() => setEntered(true)}>Open review workspace</button><p className="admin-muted">Preview only. This uses existing public content and in-memory drafts. Do not enter private information. Reloading clears changes unless you download a draft file.</p></>
         : <p>Review editing is available only in local development and the separate preview deployment. Production editing stays locked until secure setup is complete.</p>}
       <p className="admin-muted">No login credentials are collected here.</p>
+      {allowReview && <p><a href="/admin/sponsors">Review sponsor placements →</a></p>}
     </section>
   </main>;
 

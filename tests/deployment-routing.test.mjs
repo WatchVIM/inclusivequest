@@ -5,7 +5,7 @@ const config=JSON.parse(readFileSync(new URL('../vercel.json',import.meta.url),'
 
 test('admin routes target the extensionless HTML output when Vercel cleanUrls is enabled',()=>{
   assert.equal(config.cleanUrls,true);
-  for(const path of ['/admin','/admin/']) {
+  for(const path of ['/admin','/admin/','/admin/sponsors','/admin/sponsors/']) {
     const rule=config.rewrites.find(item=>item.source===path);
     assert.ok(rule,`${path} must have a direct-entry rewrite`);
     assert.equal(rule.destination,'/index');
