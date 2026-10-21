@@ -6,7 +6,8 @@ const FIELDS = {
   founder: ['name', 'title', 'bio', 'story', 'homeQuote', ...IMAGE],
   testimonial: ['name', 'title', 'quote'],
   episode: ['title', 'episodeTitle', 'description', 'category', 'youtubeUrl', 'tags', 'mainVideoSrc', 'aslVideoSrc', 'captionsSrc', 'duration', 'badge', 'interpreter', ...IMAGE],
-  category: ['name', 'slug', 'description']
+  category: ['name', 'slug', 'description'],
+  sponsor: ['placement', 'enabled', 'name', 'imageSrc', 'imageAlt', 'destinationUrl', 'targeting', 'episodeId']
 };
 export function canonicalContent(type, input) {
   if (!CONTENT_TYPES.includes(type)) throw new Error('Unknown content type.');
@@ -16,3 +17,4 @@ export function canonicalContent(type, input) {
   if (type === 'episode' && result.youtubeUrl) result.youtubeUrl = parseYouTubeUrl(result.youtubeUrl).url;
   return result;
 }
+

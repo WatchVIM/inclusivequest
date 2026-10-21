@@ -23,7 +23,7 @@ test('image references reject executable or protocol-relative paths', () => {
   assert.equal(safeSponsorImage('/sponsor-preview-placeholder.svg'), '/sponsor-preview-placeholder.svg');
 });
 test('placement selection is independent, shared episodes are explicit and duplicates fail closed', () => {
-  const home = sponsor(); const episode = sponsor('episode');
+  const home = sponsor(); const episode = { ...sponsor('episode'), targeting: 'shared' };
   assert.equal(visibleSponsor([home, episode], 'home').placement, 'home');
   assert.equal(visibleSponsor([{ ...home, enabled: false }, episode], 'home'), null);
   assert.equal(visibleSponsor([{ ...home, enabled: false }, episode], 'episode').placement, 'episode');
@@ -31,3 +31,4 @@ test('placement selection is independent, shared episodes are explicit and dupli
   assert.equal(visibleSponsor([{ ...home, destinationUrl: 'javascript:bad' }], 'home'), null);
   assert.equal(visibleSponsor(null, 'home'), null);
 });
+

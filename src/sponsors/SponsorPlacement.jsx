@@ -1,15 +1,17 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { SPONSOR_PLACEMENTS, visibleSponsor } from './sponsor-model.js';
+import { useContent } from '../cms/ContentProvider.jsx';
 import './sponsors.css';
 
-// No live campaign is configured. Only the review page supplies an in-memory value.
-const SponsorContext = createContext([]);
+// Only the isolated layout review overrides the CMS. Public pages read published snapshots.
+const SponsorContext = createContext(null);
 export function SponsorPreviewProvider({ sponsors, children }) {
   return <SponsorContext.Provider value={sponsors}>{children}</SponsorContext.Provider>;
 }
-export default function SponsorPlacement({ placement }) {
-  const sponsors = useContext(SponsorContext);
-  const sponsor = visibleSponsor(sponsors, placement);
+export default function SponsorPlacement({ placement, episodeId }) {
+  const reviewSponsors = useContext(SponsorContext);
+  const { SPONSORS } = useContent();
+  const sponsor = visibleSponsor(reviewSponsors ?? SPONSORS, placement, episodeId);
   const [failedImage, setFailedImage] = useState(false);
   useEffect(() => setFailedImage(false), [sponsor?.imageSrc]);
   if (!sponsor) return null;
@@ -23,3 +25,4 @@ export default function SponsorPlacement({ placement }) {
     </a>
   </aside>;
 }
+

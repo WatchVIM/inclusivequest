@@ -265,7 +265,7 @@ function WatchPage({ selectedTitle, captionsEnabled, setSelectedTitle }) {
   if (!selectedTitle) return <section className="page-section"><div className="container"><h1>Watch accessible podcasts</h1><p className="quiet-note">Episodes will appear here when they are published.</p></div></section>;
   return <section className="page-section"><div className="container">
     <SyncedPlayer key={selectedTitle.id} title={selectedTitle} captionsEnabled={captionsEnabled} />
-    <SponsorPlacement placement="episode" />
+    <SponsorPlacement placement="episode" episodeId={selectedTitle.id} />
     <div className="title-grid">{TITLES.map((item) => <button key={item.id}
       className={'title-card ' + (item.id === selectedTitle.id ? 'selected' : '')} onClick={() => setSelectedTitle(item)}>
       {item.poster ? <img src={item.poster} alt={item.imageAlt || item.title + ' podcast artwork'} /> : <div className="episode-artwork-placeholder" aria-hidden="true"><Icon name="mic" /></div>}
@@ -544,11 +544,11 @@ function AccessibilityPanel({
     </section>}
   </div>;
 }
-export default function App({ previewMode = false, initialPage = 'Home' }) {
+export default function App({ previewMode = false, initialPage = 'Home', initialEpisodeId = '' }) {
   const { TITLES, HOME, ABOUT, POSTS, PAGES } = useContent();
   const mainRef = useRef(null);
   const [activeTab, setActiveTab] = useState(() => previewMode ? (initialPage === 'Watch' ? 'Watch' : 'Home') : currentPage());
-  const [selectedTitleId, setSelectedTitleId] = useState(TITLES[0]?.id || '');
+  const [selectedTitleId, setSelectedTitleId] = useState(initialEpisodeId || TITLES[0]?.id || '');
   const selectedTitle = TITLES.find((item) => item.id === selectedTitleId) || TITLES[0] || null;
   const setSelectedTitle = (item) => setSelectedTitleId(item.id);
   const [captionsEnabled, setCaptionsEnabled] = useState(true);
@@ -692,3 +692,4 @@ export default function App({ previewMode = false, initialPage = 'Home' }) {
       onReadPage={onReadPage} onStopRead={onStopRead} speechSupported={speechSupported} speechStatus={speechStatus} />
   </div>;
 }
+

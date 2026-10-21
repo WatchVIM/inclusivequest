@@ -1,13 +1,15 @@
 import { ABOUT, FOUNDER, MISSION_VISION_VALUES, TESTIMONIALS, TITLES } from '../content.js';
+import { createSponsorSlot, validateSponsorSlot, sponsorPublicationIssues } from '../sponsors/sponsor-model.js';
+import { isStoredImageSource } from './backend-config.js';
 
 export const SCHEMA_VERSION = 1;
-export const CONTENT_TYPES = ['page', 'post', 'founder', 'testimonial', 'episode', 'category'];
+export const CONTENT_TYPES = ['page', 'post', 'founder', 'testimonial', 'episode', 'category', 'sponsor'];
 export const POST_TEMPLATES = {
   story: { label: 'Community story', body: 'The story\n\nWhy it matters\n\nWhat comes next' },
   announcement: { label: 'Announcement', body: 'The news\n\nWhat this means for our community\n\nNext steps' },
   interview: { label: 'Interview', body: 'Meet our guest\n\nQuestion\n\nAnswer\n\nWhere to learn more' }
 };
-export const TYPE_LABELS = { page: 'Pages', post: 'Blog posts', founder: 'Founder', testimonial: 'Testimonials', episode: 'YouTube episodes', category: 'Video categories' };
+export const TYPE_LABELS = { page: 'Pages', post: 'Blog posts', founder: 'Founder', testimonial: 'Testimonials', episode: 'YouTube episodes', category: 'Video categories', sponsor: 'Sponsors' };
 const ID = /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,99}$/;
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const clone = (value) => JSON.parse(JSON.stringify(value));
@@ -45,6 +47,11 @@ export function validateDocument(type, data) {
   const errors = {};
   if (!CONTENT_TYPES.includes(type)) return { type: 'Unknown content type.' };
   if (!data || typeof data !== 'object' || Array.isArray(data)) return { data: 'Content must be an object.' };
+  if (type === 'sponsor') {
+    const sponsorErrors = validateSponsorSlot(data, { publication: false });
+    if (typeof data.imageSrc === 'string' && !isStoredImageSource(data.imageSrc)) sponsorErrors.imageSrc = 'Upload sponsor artwork through the CMS or use an approved existing site image.';
+    return sponsorErrors;
+  }
   const text = (field, label, required = false, max = 5000) => {
     if (data[field] == null && !required) return;
     if (typeof data[field] !== 'string') errors[field] = `${label} must be text.`;
@@ -90,7 +97,8 @@ export function validateDocument(type, data) {
   return errors;
 }
 
-export function publicationIssues(type, data) {
+export function publicationIssues(type, data, records, id) {
+  if (type === 'sponsor') return { ...validateDocument(type, data), ...sponsorPublicationIssues(data, records, id) };
   const errors = validateDocument(type, data);
   if (type === 'episode' && !data.youtubeUrl && !(data.mainVideoSrc && data.aslVideoSrc)) errors.youtubeUrl = 'Add a YouTube video link or approved episode and interpreter media before publishing.';
   return errors;
@@ -124,7 +132,8 @@ export function createDraft(type, id, template = 'story') {
     founder: { name: '', title: '', bio: '', story: '', homeQuote: '', ...image },
     testimonial: { name: '', title: '', quote: '' },
     episode: { title: '', episodeTitle: '', description: '', youtubeUrl: '', category: 'Podcast', tags: [], ...image, mainVideoSrc: null, aslVideoSrc: null, captionsSrc: null, duration: '', badge: '' },
-    category: { name: '', slug: '', description: '' }
+    category: { name: '', slug: '', description: '' },
+    sponsor: createSponsorSlot('home')
   };
   return { id, type, draft: defaults[type], published: null, revision: 0 };
 }
@@ -169,3 +178,4 @@ export function importDrafts(json, currentRecords) {
   validateDraftCollection(result);
   return result;
 }
+

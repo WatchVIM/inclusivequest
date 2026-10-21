@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
 import { build } from 'esbuild';
 import { writeFile, unlink } from 'node:fs/promises';
-import { createSeedDocuments } from '../src/cms/content-model.js';
+import { createDraft, createSeedDocuments } from '../src/cms/content-model.js';
 
 const dom = new JSDOM('<!doctype html><html><head></head><body></body></html>', { url: 'http://localhost/admin' });
 for (const key of ['window', 'document', 'HTMLElement', 'HTMLDialogElement', 'HTMLInputElement', 'Node', 'Event', 'KeyboardEvent', 'MutationObserver', 'File', 'FileReader']) globalThis[key] = dom.window[key];
@@ -25,9 +25,9 @@ const copy = value => JSON.parse(JSON.stringify(value));
 const failure = (code, message) => Object.assign(new Error(message), { code });
 const defer = () => { let resolve, reject; const promise = new Promise((yes, no) => { resolve = yes; reject = no; }); return { promise, resolve, reject }; };
 
-function fixture({ role = 'publisher', authenticated = true, overrides = {} } = {}) {
+function fixture({ role = 'publisher', authenticated = true, overrides = {}, documents } = {}) {
   let callback;
-  const state = { session: authenticated ? { user: { id: 'editor-one', email: 'editor@example.test' }, role } : null, records: createSeedDocuments(), calls: [], revisions: [] };
+  const state = { session: authenticated ? { user: { id: 'editor-one', email: 'editor@example.test' }, role } : null, records: documents ? copy(documents) : createSeedDocuments(), calls: [], revisions: [] };
   const repository = {
     configured: true,
     initialize: async () => { state.calls.push(['initialize']); state.records = createSeedDocuments(); return copy(state.records); },
@@ -54,7 +54,7 @@ function fixture({ role = 'publisher', authenticated = true, overrides = {} } = 
       const saved = state.records.find(item => item.id === id);
       saved.published = null; saved.revision += 1; return copy(saved);
     },
-    uploadImage: async (file, metadata) => { state.calls.push(['upload', file.name, metadata]); return { imageSrc: '/api/media?path=editor-one%2Fimage.png', previewUrl: 'https://example.test/signed/image.png' }; },
+    uploadImage: async (file, metadata) => { state.calls.push(['upload', file.name, metadata]); return { imageSrc: '/api/media?path=11111111-1111-4111-8111-111111111111/22222222-2222-4222-8222-222222222222.png', previewUrl: 'https://example.test/signed/image.png' }; },
     previewDocuments: async (records, mode) => {
       state.calls.push(['preview', mode]);
       const selected = mode === 'published' ? records.filter(record => record.published).map(record => ({ ...record, draft: record.published })) : records;
@@ -406,4 +406,99 @@ test('production build explicitly labels publishing as a public website change',
   assert.match(banner.textContent, /Production content workspace/);
   assert.match(banner.textContent, /Publishing changes the public website/);
   assert.doesNotMatch(banner.textContent, /Production is not connected/);
+});
+
+
+test('authenticated sponsors reuse private save, upload, targeting checks, preview and confirmed publication', async () => {
+  const { user, state } = await open();
+  await section(user, 'Sponsors'); await user.click(screen.getByRole('button', { name: '+ Add sponsor' }));
+  assert.equal(screen.getByLabelText('Enable when published').checked, false);
+  assert.equal(screen.getByRole('button', { name: 'Upload image', exact: true }).disabled, true);
+  await user.selectOptions(screen.getByLabelText('Sponsor placement'), 'episode');
+  assert.equal(screen.getByLabelText('Episode targeting').value, 'undecided');
+  await user.click(screen.getByRole('button', { name: 'Save draft', exact: true }));
+  const stored = () => state.records.find(item => item.type === 'sponsor');
+  assert.equal(stored().published, null); assert.equal(stored().draft.enabled, false);
+  assert.equal(screen.getByRole('button', { name: 'Upload image', exact: true }).disabled, false);
+  fireEvent.change(screen.getByLabelText('Sponsor name'), { target: { value: 'Approved partner' } });
+  fireEvent.change(screen.getByLabelText('Destination link'), { target: { value: 'https://example.com/' } });
+  fireEvent.change(screen.getByLabelText('Alternative text'), { target: { value: 'Approved partner logo' } });
+  await act(async () => fireEvent.change(document.querySelector('input[type="file"]'), { target: { files: [new File(['fixture'], 'sponsor.png', { type: 'image/png' })] } }));
+  assert.equal(state.calls.find(call => call[0] === 'upload')[2].documentId, stored().id);
+  await user.click(screen.getByLabelText('Enable when published'));
+  await user.click(screen.getByRole('button', { name: 'Save draft', exact: true }));
+  assert.equal(stored().draft.enabled, true); assert.equal(stored().published, null);
+  assert.equal(screen.getByRole('button', { name: 'Publish', exact: true }).disabled, true);
+  assert.ok(screen.getByText(/Resolve episode targeting before publishing/));
+  await user.selectOptions(screen.getByLabelText('Episode targeting'), 'episode');
+  const target = state.records.find(item => item.type === 'episode');
+  await user.selectOptions(screen.getByLabelText('Target episode'), target.id);
+  await user.click(screen.getByRole('button', { name: 'Save draft', exact: true }));
+  assert.equal(screen.getByRole('button', { name: 'Publish', exact: true }).disabled, false);
+  await user.click(screen.getByRole('button', { name: 'Preview draft', exact: true }));
+  const preview = screen.getByRole('dialog', { name: 'Draft website preview' });
+  const ad = within(preview).getByRole('complementary', { name: 'Podcast episode pages sponsorship' });
+  assert.equal(ad.closest('.synced-player-shell'), null);
+  assert.equal(within(ad).getByRole('link').getAttribute('rel'), 'sponsored noopener noreferrer');
+  assert.ok(within(ad).getByRole('img', { name: 'Approved partner logo' }));
+  await user.click(within(preview).getByRole('button', { name: 'Close Draft website preview' }));
+  await user.click(screen.getByRole('button', { name: 'View published website', exact: true }));
+  const publishedPreview = screen.getByRole('dialog', { name: 'Published website preview' });
+  assert.equal(within(publishedPreview).queryByRole('link', { name: /Visit Approved partner/ }), null);
+  await user.click(within(publishedPreview).getByRole('button', { name: 'Close Published website preview' }));
+  await user.click(screen.getByRole('button', { name: 'Publish', exact: true }));
+  assert.equal(state.calls.some(call => call[0] === 'publish'), false);
+  await user.click(screen.getByRole('button', { name: 'Continue', exact: true }));
+  assert.equal(stored().published.episodeId, target.id);
+  await user.click(screen.getByRole('button', { name: 'Unpublish', exact: true }));
+  assert.notEqual(stored().published, null);
+  await user.click(screen.getByRole('button', { name: 'Continue', exact: true }));
+  assert.equal(stored().published, null); assert.equal(stored().draft.name, 'Approved partner');
+  assert.equal(window.localStorage.length, 0);
+});
+
+test('sponsor editor cannot publish and unsafe off-draft destinations do not save', async () => {
+  const { user, state } = await open({ role: 'editor' });
+  await section(user, 'Sponsors'); await user.click(screen.getByRole('button', { name: '+ Add sponsor' }));
+  fireEvent.change(screen.getByLabelText('Destination link'), { target: { value: 'javascript:alert(1)' } });
+  await user.click(screen.getByRole('button', { name: 'Save draft', exact: true }));
+  assert.equal(document.activeElement, screen.getByLabelText('Destination link'));
+  assert.equal(state.calls.some(call => call[0] === 'save'), false);
+  fireEvent.change(screen.getByLabelText('Destination link'), { target: { value: '' } });
+  await user.click(screen.getByRole('button', { name: 'Save draft', exact: true }));
+  assert.equal(state.records.find(item => item.type === 'sponsor').published, null);
+  assert.equal(screen.getByRole('button', { name: 'Publish', exact: true }).disabled, true);
+  await user.click(screen.getByRole('button', { name: 'Publish', exact: true }));
+  assert.equal(state.calls.some(call => call[0] === 'publish'), false);
+});
+
+test('per-episode sponsor preview opens its target and disappears when another episode is selected', async () => {
+  const documents = createSeedDocuments(); const target = documents.find(item => item.type === 'episode');
+  const second = { ...copy(target), id: 'second-episode', draft: { ...target.draft, title: 'Second show', episodeTitle: 'Second episode' }, published: { ...target.published, title: 'Second show', episodeTitle: 'Second episode' } };
+  documents.push(second);
+  const sponsor = createDraft('sponsor', 'sponsor-targeted');
+  sponsor.draft = { ...sponsor.draft, placement: 'episode', targeting: 'episode', episodeId: second.id, enabled: true, name: 'Targeted partner', imageSrc: '/inclusive-quest-logo.png', imageAlt: 'Targeted partner logo', destinationUrl: 'https://example.com/' };
+  documents.push(sponsor);
+  const { user } = await open({ documents }); await section(user, 'Sponsors');
+  await user.click(screen.getByRole('button', { name: 'Preview draft', exact: true }));
+  const preview = screen.getByRole('dialog', { name: 'Draft website preview' });
+  assert.ok(within(preview).getByRole('link', { name: /Visit Targeted partner/ }));
+  const originalCard = [...preview.querySelectorAll('button.title-card')].find(button => button.textContent.includes(target.draft.title));
+  await user.click(originalCard);
+  assert.equal(within(preview).queryByRole('link', { name: /Visit Targeted partner/ }), null);
+});
+
+test('sponsor history restores only a private draft and leaves its published advertiser unchanged', async () => {
+  const documents = createSeedDocuments(); const sponsor = createDraft('sponsor', 'sponsor-history');
+  sponsor.draft = { ...sponsor.draft, enabled: true, name: 'Published partner', imageSrc: '/inclusive-quest-logo.png', imageAlt: 'Partner logo', destinationUrl: 'https://example.com/' };
+  sponsor.published = copy(sponsor.draft); sponsor.revision = 4; documents.push(sponsor);
+  const { user, state } = await open({ documents }); await section(user, 'Sponsors');
+  state.revisions.push({ id: 'sponsor-old', action: 'save', data: { ...sponsor.draft, enabled: false, name: 'Earlier private partner' } });
+  await user.click(screen.getByRole('button', { name: 'Revision history', exact: true }));
+  await user.click(screen.getByRole('button', { name: 'Restore as draft', exact: true }));
+  await user.click(screen.getByRole('button', { name: 'Continue', exact: true }));
+  assert.equal(screen.getByLabelText('Sponsor name').value, 'Earlier private partner');
+  assert.equal(screen.getByLabelText('Enable when published').checked, false);
+  assert.equal(state.records.find(item => item.id === sponsor.id).published.name, 'Published partner');
+  assert.equal(state.calls.some(call => call[0] === 'publish'), false);
 });
