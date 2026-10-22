@@ -9,7 +9,7 @@
 .desktop-nav{gap:2px}.desktop-nav .nav-item{font-size:12px;padding:12px 9px;white-space:nowrap}
 .header-actions{flex-shrink:0}.header-actions .outline-button,.header-actions .gradient-button{font-size:12px;padding:11px 14px}
 .hero-copy h1{font-size:clamp(46px,5.8vw,77px);line-height:1.03}
-.hero-copy h1 span{font-size:.55em;line-height:1.16;margin-top:15px}
+.hero-copy h1 .hero-subtitle{font-size:.55em;line-height:1.16;margin-top:15px}
 .hero-quote{margin:24px 0 0;padding:20px;border-left:3px solid #ec4899;border-radius:0 16px 16px 0;background:rgba(255,255,255,.06);font-size:15px;line-height:1.55;color:rgba(255,255,255,.9)}
 .preview-grid{grid-template-columns:.37fr 1fr}
 .pencil-hand{display:inline-block;font-size:72px;line-height:1.2;filter:grayscale(1) contrast(1.4);transform:scaleX(-1)}
@@ -158,7 +158,7 @@
 .app-shell.highContrast{--bg:#000;--panel:#000;--panel-strong:#000;--stroke:#fff;--text:#fff;--muted:#fff;--soft:#fff;background:#000!important;color:#fff}
 .app-shell.highContrast :is(.site-header,.hero-section,.feature-card,.stat-card,.info-panel,.preview-frame,.interpreter-card,.main-preview-card,.bio-section,.mvv-card,.team-card,.testimonial-grid blockquote,.newsletter,.work-with-us,.tally-form-wrap,.card-topline,.a11y-panel,.invest-prompt,.invest-home){background:#000!important;border:3px solid #fff!important;color:#fff!important;box-shadow:none!important}
 .app-shell.highContrast :is(p,small,span,h1,h2,h3,a,button,.eyebrow){color:#fff!important;opacity:1!important}
-.app-shell.highContrast .hero-copy h1 span{background:none!important;-webkit-text-fill-color:#fff!important}
+.app-shell.highContrast .hero-copy h1 .hero-subtitle{background:none!important;-webkit-text-fill-color:#fff!important}
 .app-shell.highContrast :is(.gradient-button,.glass-button,.form-switch,.a11y-trigger){background:#fff!important;color:#000!important;border:3px solid #fff!important}
 .app-shell.highContrast :is(.gradient-button,.glass-button,.form-switch,.a11y-trigger) :is(span){color:#000!important}
 .app-shell.highContrast :is(input,select){border:2px solid white!important}
@@ -167,7 +167,7 @@
 .app-shell.adhdFriendly main :is(h1,h2,h3){border-bottom:3px solid var(--cyan);padding-bottom:9px}
 .app-shell.colorBlind{--pink:#0375cf;--orange:#f4bb22;--lime:#f4bb22;--cyan:#71e1ff;--violet:#0375cf}
 .app-shell.colorBlind :is(.gradient-button,.a11y-trigger,.hero-quote,.hero-iq-question,.mission-pill){background:#0566b5!important;color:#fff!important;border-color:#f4bb22!important}
-.app-shell.colorBlind :is(.hero-copy h1 span,.wordmark span){background:linear-gradient(90deg,#71e1ff,#f4bb22)!important;-webkit-background-clip:text!important;background-clip:text!important;color:transparent!important}
+.app-shell.colorBlind :is(.hero-copy h1 .hero-subtitle,.wordmark span){background:linear-gradient(90deg,#71e1ff,#f4bb22)!important;-webkit-background-clip:text!important;background-clip:text!important;color:transparent!important}
 .app-shell.colorBlind :is(.logo-img,.preview-brand-mark,.about-signature-logo){filter:contrast(1.25) saturate(.6) hue-rotate(140deg)!important}
 .app-shell.colorBlind .a11y-panel input{accent-color:#71e1ff!important}
 .app-shell.highlightLinks a:not(.gradient-button):not(.glass-button){color:#fff!important;background:rgba(236,72,153,.24)!important;outline:2px solid var(--pink);outline-offset:2px;text-decoration:underline!important;text-decoration-color:var(--pink)!important;text-decoration-thickness:3px!important}
@@ -222,6 +222,58 @@
 .site-preview .a11y-trigger{position:static}
 .site-preview .a11y-panel{position:absolute;bottom:64px;right:0;max-width:calc(100vw - 50px)}
 @media(max-width:640px){.youtube-consent{grid-template-columns:1fr;padding:20px;gap:16px}.youtube-consent>img{max-height:220px}.youtube-note{padding:14px 20px}.youtube-frame{aspect-ratio:16/10}}
+
+/* Client-approved refinements. Keep text legible when gradients are unavailable. */
+.gradient-word{color:#f5c4ec}
+@supports ((background-clip:text) or (-webkit-background-clip:text)){
+  .gradient-word{background:linear-gradient(95deg,#ffa9d4,#ffd19c,#e2efa7,#8ce8f4);-webkit-background-clip:text;background-clip:text;color:transparent}
+}
+.app-shell.highContrast .gradient-word,.app-shell.highContrast .wordmark span{background:none!important;color:#fff!important;-webkit-text-fill-color:#fff!important}
+.app-shell.colorBlind .gradient-word{background:none!important;color:#ffe59b!important;-webkit-text-fill-color:#ffe59b!important}
+.hero-iq-question s{text-decoration-thickness:2px;text-decoration-color:currentColor}
+.about-intro-grid{gap:24px;padding:32px;align-items:start}
+.about-heading-block .about-signature-logo{width:min(190px,65%);height:auto;max-height:150px;margin:20px 0 0;object-position:left}
+.about-page .mission-vision-values{margin-top:24px}
+.about-page .team-section{padding-top:36px}
+.interpreter-card .professional-preview{height:100%;min-height:290px}
+.footer-inner{align-items:flex-start;flex-wrap:wrap}
+.footer-brand{flex:0 1 300px;min-width:0}
+.footer-tagline{font-size:1.1rem;max-width:26ch}
+.footer-links{flex:1 1 500px;display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;min-width:0}
+.footer-links .nav-item{padding:8px 6px;min-height:44px;display:inline-flex;align-items:center;font-size:.9rem;text-decoration:none;line-height:1.4}
+.footer-links a[aria-current=page]{color:#fff;text-decoration:underline;text-decoration-color:#ffa9d4;text-underline-offset:6px}
+.footer-links>a:not(.nav-item){overflow-wrap:anywhere;max-width:100%}
+.footer-inner .copyright{flex-basis:100%;margin-bottom:0}
+.blog-byline{display:flex;gap:8px 18px;flex-wrap:wrap;color:var(--muted);font-size:.95rem;line-height:1.6}
+.blog-brand-stamp{display:block;width:52px!important;height:52px!important;object-fit:contain!important;margin:0 0 14px;border-radius:0!important}
+.cms-article>.blog-brand-stamp{width:64px!important;height:64px!important}
+.episode-host{font-size:.95rem!important;line-height:1.6;color:var(--text)!important}
+.app-shell button:disabled{cursor:not-allowed}
+.app-shell :is(a,button,input,select,textarea,[tabindex]):focus-visible{outline:3px solid #8ce8f4;outline-offset:4px}
+.app-shell main:focus{outline:none}
+.a11y-speech-actions{grid-template-columns:1fr 1fr}
+.a11y-speech-actions button:last-child{grid-column:1/-1}
+.a11y-panel{max-width:calc(100vw - 24px);overscroll-behavior:contain}
+.mobile-nav{max-height:calc(100dvh - 85px);overflow-y:auto;overscroll-behavior:contain}
+.mobile-nav button{min-height:44px}
+@media(max-width:1280px){.desktop-nav,.header-actions{display:none}.mobile-menu{display:inline-flex}}
+@media(max-width:780px){
+  .about-intro-grid{padding:24px;gap:20px}
+  .about-heading-block .about-signature-logo{width:140px;max-height:120px;margin-top:16px}
+  .footer-brand,.footer-links{flex-basis:auto;width:100%}
+  .footer-links{gap:8px 12px}
+  .interpreter-card .professional-preview{min-height:180px}
+  .a11y-panel{max-height:min(75dvh,700px)}
+}
+@media(forced-colors:active){
+  .gradient-word,.wordmark span,.hero-copy h1 .hero-subtitle{background:none!important;color:CanvasText!important;-webkit-text-fill-color:CanvasText!important}
+  .app-shell :is(a,button,input,select,textarea,[tabindex]):focus-visible{outline-color:Highlight!important}
+  .hero-iq-question s{text-decoration-color:CanvasText}
+}
+.feature-interpreter-mark{display:block;width:40px;height:40px;object-fit:contain}
+.footer-brand .logo-copy,.footer-brand .wordmark{display:block}
+.a11y-panel-heading button{min-width:44px;min-height:44px}
+.watch-unavailable .watch-interpreter-mark{display:block;width:88px;height:88px;object-fit:contain;margin:0 0 16px;border-radius:0}
 
 /* Center the complete footer on phones without changing the desktop layout. */
 @media (max-width: 780px) {

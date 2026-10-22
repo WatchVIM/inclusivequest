@@ -43,9 +43,11 @@ export default function AuthenticatedAdminApp({ repository, deploymentEnvironmen
   const [preview, setPreview] = useState(null);
   const [history, setHistory] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
+  const [interpreterImagePreview, setInterpreterImagePreview] = useState('');
   const [imageError, setImageError] = useState('');
   const [imageRefresh, setImageRefresh] = useState(0);
   const fileRef = useRef(null);
+  const interpreterFileRef = useRef(null);
   const busyRef = useRef(false);
   const gateRef = useRef('checking');
   const retainedUserRef = useRef(null);
@@ -64,7 +66,7 @@ export default function AuthenticatedAdminApp({ repository, deploymentEnvironmen
   const selectRecord = (record, nextSection = record?.type || section) => {
     setNewRecord(null); setSection(nextSection); setSelectedId(record?.id || null);
     setForm(clone(record?.draft || {})); setTagsText(record?.draft?.tags?.join(', ') || '');
-    setErrors({}); setConflict(false); setSearch(''); setImagePreview(''); setImageError(''); setImageRefresh(previous => previous + 1);
+    setErrors({}); setConflict(false); setSearch(''); setImagePreview(''); setInterpreterImagePreview(''); setImageError(''); setImageRefresh(previous => previous + 1);
   };
   const replaceRecords = (next, preferredId = selectedId) => {
     setRecords(next);
@@ -153,13 +155,13 @@ export default function AuthenticatedAdminApp({ repository, deploymentEnvironmen
 
   useEffect(() => {
     let active = true;
-    setImagePreview(''); setImageError('');
-    if (gate !== 'ready' || !form.imageSrc || !selected) return () => { active = false; };
-    repository.previewDocuments([{ ...selected, draft: { ...selected.draft, imageSrc: form.imageSrc } }], 'draft')
-      .then(documents => { if (active) setImagePreview(documents[0]?.draft?.imageSrc || ''); })
+    setImagePreview(''); setInterpreterImagePreview(''); setImageError('');
+    if (gate !== 'ready' || (!form.imageSrc && !form.interpreterImageSrc) || !selected) return () => { active = false; };
+    repository.previewDocuments([{ ...selected, draft: { ...selected.draft, imageSrc: form.imageSrc, interpreterImageSrc: form.interpreterImageSrc } }], 'draft')
+      .then(documents => { if (active) { setImagePreview(documents[0]?.draft?.imageSrc || ''); setInterpreterImagePreview(documents[0]?.draft?.interpreterImageSrc || ''); } })
       .catch(error => { if (active) { if (isExpired(error) || isDenied(error)) handleError(error, 'Could not preview image'); else setImageError('Image preview is unavailable. Reload the content to retry after checking your connection.'); } });
     return () => { active = false; };
-  }, [repository, gate, selectedId, form.imageSrc, imageRefresh]);
+  }, [repository, gate, selectedId, form.imageSrc, form.interpreterImageSrc, imageRefresh]);
 
   const guard = action => {
     if (busyRef.current) return;
@@ -232,15 +234,15 @@ export default function AuthenticatedAdminApp({ repository, deploymentEnvironmen
         if (current()) { updateRecord(record); setMessage(mode === 'publish' ? `Published successfully. The saved version is now available to ${publishTarget}.` : 'Unpublished successfully. The saved draft remains private.'); }
       }) });
   };
-  const uploadImage = event => {
+  const uploadImage = (event, sourceField = 'imageSrc', altField = 'imageAlt') => {
     const file = event.target.files?.[0]; event.target.value = '';
     if (!file || !selected) return;
-    if (!form.imageAlt?.trim()) { setErrors(previous => ({ ...previous, imageAlt: 'Add alternative text before uploading.' })); setMessage('Describe the image in Alternative text before uploading.'); return; }
-    if (form.imageAlt.length > 500) { setMessage('Alternative text must be 500 characters or fewer.'); return; }
+    if (!form[altField]?.trim()) { setErrors(previous => ({ ...previous, [altField]: 'Add alternative text before uploading.' })); setMessage('Describe the image in Alternative text before uploading.'); return; }
+    if (form[altField].length > 500) { setMessage('Alternative text must be 500 characters or fewer.'); return; }
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > MAX_IMAGE_BYTES || !file.size) { setMessage('Choose a JPEG, PNG or WebP image up to 4 MB. SVG and empty files are not accepted.'); return; }
     run('Could not upload image', async current => {
-      const result = await repository.uploadImage(file, { documentId: selected.id, alt: form.imageAlt.trim() });
-      if (current()) { setForm(previous => ({ ...previous, imageSrc: result.imageSrc, imageAlt: previous.imageAlt.trim() })); setImagePreview(result.previewUrl || ''); setErrors(previous => ({ ...previous, imageSrc: undefined, imageAlt: undefined })); setMessage('Image uploaded privately. Save the draft to attach it. It will be public only when its content is published.'); }
+      const result = await repository.uploadImage(file, { documentId: selected.id, alt: form[altField].trim() });
+      if (current()) { setForm(previous => ({ ...previous, [sourceField]: result.imageSrc, [altField]: previous[altField].trim() })); (sourceField === 'imageSrc' ? setImagePreview : setInterpreterImagePreview)(result.previewUrl || ''); setErrors(previous => ({ ...previous, [sourceField]: undefined, [altField]: undefined })); setMessage('Image uploaded privately. Save the draft to attach it. It will be public only when its content is published.'); }
     });
   };
   const openHistory = () => run('Could not load revisions', async current => {
@@ -314,6 +316,16 @@ export default function AuthenticatedAdminApp({ repository, deploymentEnvironmen
                 <small id="upload-note">{newRecord ? 'Save this new draft before uploading its image.' : 'JPEG, PNG or WebP, up to 4 MB. Add alternative text first. Draft uploads are private.'}</small>
                 {imagePreview && <figure className="admin-image-preview"><img src={imagePreview} alt={form.imageAlt || 'Draft image preview'} onError={() => { setImagePreview(''); setImageError('Image preview could not load. The image may have expired or the file may be unavailable.'); }} /><figcaption>Draft image preview</figcaption></figure>}{imageError && <p className="admin-muted">{imageError}</p>}
               </fieldset>}
+              {selected.type === 'page' && selected.id === 'page-home' && <fieldset className="admin-image-fields"><legend>Homepage interpreter panel</legend>
+                <p className="admin-muted">This image is separate from the site logo. Leave the title and subtitle blank until approved details are ready.</p>
+                {[['interpreterTitle', 'Interpreter title (optional)'], ['interpreterSubtitle', 'Interpreter subtitle (optional)'], ['interpreterImageSrc', 'Stored interpreter image reference'], ['interpreterImageAlt', 'Interpreter image alternative text']].map(([name, label]) => <Field key={name} name={name} label={label} value={form[name]} onChange={value => { setForm(previous => ({ ...previous, [name]: value })); setErrors(previous => ({ ...previous, [name]: undefined })); }} error={errors[name]} connected />)}
+                <button type="button" disabled={Boolean(newRecord)} onClick={() => interpreterFileRef.current.click()} aria-describedby="interpreter-upload-note">Upload interpreter image</button>
+                {form.interpreterImageSrc && <button type="button" onClick={() => setForm(previous => ({ ...previous, interpreterImageSrc: '', interpreterImageAlt: '' }))}>Remove interpreter image from draft</button>}
+                <input ref={interpreterFileRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={event => uploadImage(event, 'interpreterImageSrc', 'interpreterImageAlt')} />
+                <small id="interpreter-upload-note">JPEG, PNG or WebP, up to 4 MB. Add interpreter image alternative text first. Uploads remain private until published.</small>
+                {interpreterImagePreview && <figure className="admin-image-preview"><img src={interpreterImagePreview} alt={form.interpreterImageAlt || 'Draft interpreter image preview'} onError={() => { setInterpreterImagePreview(''); setImageError('Interpreter image preview could not load.'); }} /><figcaption>Draft interpreter image preview</figcaption></figure>}
+              </fieldset>}
+              {selected.type === 'episode' && form.comingSoon === true && ['youtubeUrl', 'mainVideoSrc', 'aslVideoSrc', 'captionsSrc'].some(field => form[field]) && <div className="admin-notice"><p>Remove all media links before publishing this coming-soon episode. This does not delete uploaded files or change the published version.</p><button type="button" onClick={() => { setForm(previous => ({ ...previous, youtubeUrl: '', mainVideoSrc: '', aslVideoSrc: '', captionsSrc: '' })); setErrors({}); setMessage('Media links removed from the fields. Save the draft to keep this change. Nothing was published.'); }}>Remove media links from draft</button></div>}
               {selected.type === 'episode' && parseYouTubeUrl(form.youtubeUrl) && <div className="admin-video-check"><strong>Valid YouTube link format</strong><p>Video ID: {parseYouTubeUrl(form.youtubeUrl).videoId}</p><p className="admin-muted">Check video availability, permissions, captions and Sign Language interpretation in the website preview.</p></div>}
               <div className="admin-editor-actions"><button className="admin-primary" type="submit" disabled={!dirty || conflict}>Save draft</button><button type="button" onClick={() => openPreview('draft')}>Preview draft</button><button type="button" onClick={() => openPreview('published')}>View published website</button>{!newRecord && <button type="button" onClick={openHistory}>Revision history</button>}</div>
               <div className="admin-publish-block"><div><strong>{isPreviewDeployment ? 'Publish to preview site' : isProductionDeployment ? 'Publish to website' : 'Publish to connected CMS'}</strong><p>{publisher ? 'Only a saved, valid draft can be published. Publishing requires confirmation.' : 'Your editor role can save drafts. A publisher must make content live.'}</p>{Object.keys(publishIssues).length > 0 && <p className="admin-muted">Content checks: {Object.values(publishIssues).join(' ')}</p>}</div><div className="admin-publication-actions"><button disabled={!publisher || dirty || conflict || Object.keys(publishIssues).length > 0} type="button" onClick={() => confirmPublication('publish')}>Publish</button>{selected.published && <button disabled={!publisher || dirty || conflict} type="button" onClick={() => confirmPublication('unpublish')}>Unpublish</button>}</div></div>

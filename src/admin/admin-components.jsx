@@ -3,10 +3,10 @@ import { createPortal } from 'react-dom';
 
 export const FIELD_SETS = {
   page: [['title', 'Page name'], ['slug', 'Page slug'], ['heading', 'Page heading'], ['subtitle', 'Subtitle'], ['body', 'Page text', 'textarea']],
-  post: [['title', 'Post title'], ['slug', 'Post slug'], ['excerpt', 'Summary', 'textarea'], ['body', 'Post text', 'textarea']],
-  founder: [['name', 'Name'], ['title', 'Role'], ['homeQuote', 'Homepage quote', 'textarea'], ['bio', 'Biography', 'textarea'], ['story', 'Founder story', 'textarea']],
+  post: [['title', 'Post title'], ['slug', 'Post slug'], ['date', 'Post date', 'date'], ['author', 'Author'], ['excerpt', 'Summary', 'textarea'], ['body', 'Post text', 'textarea']],
+  founder: [['heading', 'Founder heading (optional)'], ['name', 'Name'], ['title', 'Role'], ['homeQuote', 'Homepage quote', 'textarea'], ['bio', 'Biography', 'textarea'], ['story', 'Founder story', 'textarea']],
   testimonial: [['name', 'Name'], ['title', 'Attribution / role'], ['quote', 'Quote', 'textarea']],
-  episode: [['title', 'Show title'], ['episodeTitle', 'Episode title'], ['description', 'Description', 'textarea'], ['youtubeUrl', 'YouTube video URL', 'url'], ['category', 'Category'], ['tags', 'Tags (comma-separated)', 'tags']],
+  episode: [['title', 'Show title'], ['hostName', 'Host name'], ['comingSoon', 'Coming soon (no playback)', 'checkbox'], ['episodeTitle', 'Episode title'], ['description', 'Description', 'textarea'], ['youtubeUrl', 'YouTube video URL', 'url'], ['category', 'Category'], ['tags', 'Tags (comma-separated)', 'tags']],
   category: [['name', 'Category name'], ['slug', 'Category slug'], ['description', 'Description', 'textarea']],
   sponsor: [['name', 'Sponsor name'], ['destinationUrl', 'Destination link', 'url']]
 };
@@ -54,15 +54,21 @@ export function Field({ name, label, type, value, onChange, error, categories = 
   const help = name === 'body' || name === 'bio' || name === 'story' ? 'Separate paragraphs with a blank line. Plain text only.'
     : name === 'youtubeUrl' ? 'Paste a full HTTPS YouTube video link. Playlist-only links and embed code are not accepted.'
     : name === 'destinationUrl' ? 'Use the approved full HTTPS destination. Opens in a new tab with a Sponsored label.'
-    : name === 'imageSrc' ? (connected ? 'This reference is managed automatically. Upload an image below to replace it. Uploaded images stay private until published.' : 'Use an existing approved HTTPS image URL or site asset path. Secure uploads are not connected yet.')
-    : name === 'imageAlt' ? 'Describe what the image communicates. Required when an image is provided.'
+    : ['imageSrc', 'interpreterImageSrc'].includes(name) ? (connected ? 'This reference is managed automatically. Upload an image below to replace it. Uploaded images stay private until published.' : 'Use an existing approved HTTPS image URL or site asset path. Secure uploads are not connected yet.')
+    : ['imageAlt', 'interpreterImageAlt'].includes(name) ? 'Describe what the image communicates. Required when an image is provided.'
+    : name === 'date' ? 'Optional publication date. Leave blank if it is not yet known.'
+    : name === 'author' ? 'Defaults to Alma / Inclusive Quest when left blank.'
+    : name === 'comingSoon' ? 'Coming soon hides playback, not media URLs. Remove all YouTube, main video, interpreter video and caption links before publishing a coming-soon episode. Links can remain in a private draft. Turn this off only when approved media is ready.'
+    : name === 'heading' && label.startsWith('Founder') ? 'Leave blank to omit the bold heading above the founder biography.'
+    : name === 'interpreterTitle' || name === 'interpreterSubtitle' ? 'Optional. Leave blank until the approved interpreter details are available.'
     : fixedSlug ? 'This existing page address is fixed in the site navigation.' : '';
   const common = { id, name, value: value ?? '', onChange: event => onChange(event.target.value), 'aria-invalid': Boolean(error), 'aria-describedby': [error && `${id}-error`, help && `${id}-help`].filter(Boolean).join(' ') || undefined };
   return <div className="admin-field">
     <label htmlFor={id}>{label}</label>
-    {type === 'textarea' ? <textarea {...common} rows={name === 'body' || name === 'bio' || name === 'story' ? 8 : 4} />
+    {type === 'checkbox' ? <input id={id} name={name} type="checkbox" checked={value === true} onChange={event => onChange(event.target.checked)} aria-invalid={Boolean(error)} aria-describedby={common['aria-describedby']} />
+      : type === 'textarea' ? <textarea {...common} rows={name === 'body' || name === 'bio' || name === 'story' ? 8 : 4} />
       : type === 'select' ? <select {...common}>{options.map(([option, title]) => <option key={option} value={option}>{title}</option>)}</select>
-      : <input {...common} type={type === 'url' ? 'url' : 'text'} list={name === 'category' ? 'admin-categories' : undefined} readOnly={fixedSlug || (connected && name === 'imageSrc')} />}
+      : <input {...common} type={type === 'url' || type === 'date' ? type : 'text'} list={name === 'category' ? 'admin-categories' : undefined} readOnly={fixedSlug || (connected && ['imageSrc', 'interpreterImageSrc'].includes(name))} />}
     {name === 'category' && <datalist id="admin-categories">{categories.map(category => <option key={category} value={category} />)}</datalist>}
     {help && <small id={`${id}-help`}>{help}</small>}
     {error && <p className="admin-field-error" id={`${id}-error`}>{error}</p>}

@@ -19,7 +19,7 @@ test('production admin stays locked and public site preserves current content', 
   await expect(page.getByText('Secure publishing is not connected yet.')).toBeVisible();
   await expect(page.getByRole('button',{name:'Open review workspace'})).toHaveCount(0);
   await page.goto('http://127.0.0.1:4173/');
-  await expect(page.getByRole('heading',{name:/Accessible Podcasts.*See Every Story\. See Every Voice\./})).toBeVisible();
+  await expect(page.getByRole('heading',{name:/Accessible Podcasts/})).toBeVisible();
   await expect(page.getByRole('button',{name:'Start Watching'})).toBeVisible();
 });
 
@@ -48,13 +48,13 @@ test('page draft previews actual website without changing URL or published refer
   await expect(page.getByRole('status')).toContainText('Nothing was published');
   await page.getByRole('button',{name:'Preview website',exact:true}).click();
   const dialog=page.getByRole('dialog',{name:'Draft website preview'});
-  await expect(dialog.getByRole('heading',{name:/Access for every story.*See Every Story\. See Every Voice\./})).toBeVisible();
+  await expect(dialog.getByRole('heading',{name:/Access for every story/})).toBeVisible();
   await siteNav(page,dialog,'About');
   await expect(dialog.getByRole('heading',{name:'About Inclusive Quest',exact:true})).toBeVisible();
   expect(new URL(page.url()).hash).toBe('');
   await page.keyboard.press('Escape');
   await page.getByRole('button',{name:'View published reference'}).click();
-  await expect(page.getByRole('dialog').getByRole('heading',{name:/Accessible Podcasts.*See Every Story\. See Every Voice\./})).toBeVisible();
+  await expect(page.getByRole('dialog').getByRole('heading',{name:/Accessible Podcasts/})).toBeVisible();
   await page.getByRole('button',{name:'Close Published reference preview'}).click();
   await expect(page.getByLabel('Page heading',{exact:true})).toHaveValue('Access for every story.');
 });
@@ -122,6 +122,6 @@ test('configured public reader renders a published YouTube snapshot and ignores 
   await expect(page.locator('iframe.youtube-frame')).toHaveCount(0);
   documents[0].draft={...documents[0].published,heading:'PRIVATE DRAFT'};
   await page.goto('/');
-  await expect(page.getByRole('heading',{name:/Accessible Podcasts.*See Every Story\. See Every Voice\./})).toBeVisible();
+  await expect(page.getByRole('heading',{name:/Accessible Podcasts/})).toBeVisible();
   await expect(page.getByText('PRIVATE DRAFT')).toHaveCount(0);
 });

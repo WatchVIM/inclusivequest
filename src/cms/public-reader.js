@@ -1,4 +1,4 @@
-import { createSeedDocuments, parseYouTubeUrl, validateDocument } from './content-model.js';
+import { createSeedDocuments, parseYouTubeUrl, validateDocument, DEFAULT_POST_AUTHOR, isValidPostDate } from './content-model.js';
 import { validateSponsorSlot, safeSponsorImage, safeSponsorDestination } from '../sponsors/sponsor-model.js';
 import { canonicalContent } from './canonical-content.js';
 
@@ -22,7 +22,9 @@ function pageData(document) {
   const data = document.data;
   return { id: document.id, title: text(data.title), slug: text(data.slug), heading: text(data.heading),
     subtitle: text(data.subtitle), body: text(data.body), paragraphs: paragraphs(data.body),
-    imageSrc: safePublicAssetUrl(data.imageSrc), imageAlt: text(data.imageAlt) };
+    imageSrc: safePublicAssetUrl(data.imageSrc), imageAlt: text(data.imageAlt),
+    interpreterImageSrc: safePublicAssetUrl(data.interpreterImageSrc), interpreterImageAlt: text(data.interpreterImageAlt),
+    interpreterTitle: text(data.interpreterTitle), interpreterSubtitle: text(data.interpreterSubtitle) };
 }
 
 /** Adapt CMS snapshots to the public site's presentation model. No draft is read outside preview. */
@@ -64,14 +66,14 @@ export function buildPublicContent(documents = createSeedDocuments(), { preview 
       const page = pages.find((item) => item.id === `page-${id}`) || {};
       return { ...page, id, text: page.body || '' };
     }),
-    FOUNDER: { name: text(founder.name), title: text(founder.title), bio: paragraphs(founder.bio),
+    FOUNDER: { heading: text(founder.heading), name: text(founder.name), title: text(founder.title), bio: paragraphs(founder.bio),
       story: paragraphs(founder.story), homeQuote: text(founder.homeQuote),
       photoSrc: safePublicAssetUrl(founder.imageSrc), photoAlt: text(founder.imageAlt) },
     TESTIMONIALS: selected.filter((document) => document.type === 'testimonial').map(({ id, data }) => ({
       id, name: text(data.name), title: text(data.title), quote: text(data.quote)
     })),
     TITLES: selected.filter((document) => document.type === 'episode').map(({ id, data }) => ({
-      id, title: text(data.title), episodeTitle: text(data.episodeTitle), description: text(data.description),
+      id, title: text(data.title), hostName: text(data.hostName), comingSoon: data.comingSoon === true, episodeTitle: text(data.episodeTitle), description: text(data.description),
       category: text(data.category), tags: Array.isArray(data.tags) ? data.tags.filter((tag) => typeof tag === 'string') : [],
       youtubeUrl: parseYouTubeUrl(text(data.youtubeUrl))?.url || '',
       poster: safePublicAssetUrl(data.imageSrc), imageAlt: text(data.imageAlt),
@@ -82,7 +84,7 @@ export function buildPublicContent(documents = createSeedDocuments(), { preview 
     POSTS: selected.filter((document) => document.type === 'post').map(({ id, data }) => ({
       id, title: text(data.title), slug: text(data.slug), excerpt: text(data.excerpt), body: text(data.body),
       paragraphs: paragraphs(data.body), imageSrc: safePublicAssetUrl(data.imageSrc), imageAlt: text(data.imageAlt),
-      template: text(data.template)
+      template: text(data.template), date: isValidPostDate(data.date) ? data.date : '', author: text(data.author).trim() || DEFAULT_POST_AUTHOR
     })),
     CATEGORIES: selected.filter((document) => document.type === 'category').map(({ id, data }) => ({
       id, name: text(data.name), slug: text(data.slug), description: text(data.description)
