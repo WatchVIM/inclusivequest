@@ -122,17 +122,17 @@ language sql immutable security invoker set search_path = '' as $$
 $$;
 create function cms_private.validate_document(p_type text, p_data jsonb, p_publishing boolean default false) returns boolean
 language plpgsql immutable security invoker set search_path = '' as $$
-declare v_allowed text[]; v_required text[]; v_key text; v_value jsonb; v_max integer; v_text text;
+declare v_allowed text[]; v_required text[]; v_key text; v_value jsonb; v_max integer; v_text text; v_date date;
 begin
   if p_data is null or jsonb_typeof(p_data) <> 'object' or octet_length(p_data::text) > 200000 then
     raise exception using errcode = 'PT400', message = 'Content must be an object smaller than 200 KB.';
   end if;
   case p_type
-    when 'page' then v_allowed := array['title','slug','heading','subtitle','body','imageSrc','imageAlt']; v_required := array['title','slug','heading','body'];
-    when 'post' then v_allowed := array['title','slug','excerpt','body','template','imageSrc','imageAlt']; v_required := array['title','slug','excerpt','body','template'];
-    when 'founder' then v_allowed := array['name','title','bio','story','homeQuote','imageSrc','imageAlt']; v_required := array['name','title','bio','story','homeQuote'];
+    when 'page' then v_allowed := array['title','slug','heading','subtitle','body','imageSrc','imageAlt','interpreterImageSrc','interpreterImageAlt','interpreterTitle','interpreterSubtitle']; v_required := array['title','slug','heading','body'];
+    when 'post' then v_allowed := array['title','slug','excerpt','body','template','imageSrc','imageAlt','date','author']; v_required := array['title','slug','excerpt','body','template'];
+    when 'founder' then v_allowed := array['name','title','heading','bio','story','homeQuote','imageSrc','imageAlt']; v_required := array['name','title','bio','story','homeQuote'];
     when 'testimonial' then v_allowed := array['name','title','quote']; v_required := array['name','quote'];
-    when 'episode' then v_allowed := array['title','episodeTitle','description','category','youtubeUrl','tags','mainVideoSrc','aslVideoSrc','captionsSrc','duration','badge','interpreter','imageSrc','imageAlt']; v_required := array['title','episodeTitle','description','category','tags'];
+    when 'episode' then v_allowed := array['title','episodeTitle','description','category','youtubeUrl','tags','mainVideoSrc','aslVideoSrc','captionsSrc','duration','badge','interpreter','imageSrc','imageAlt','hostName','comingSoon']; v_required := array['title','episodeTitle','description','category','tags'];
     when 'category' then v_allowed := array['name','slug','description']; v_required := array['name','slug'];
     when 'sponsor' then v_allowed := array['placement','enabled','name','imageSrc','imageAlt','destinationUrl','targeting','episodeId']; v_required := array['placement','enabled','targeting'];
     else raise exception using errcode = 'PT400', message = 'Unknown content type.';
@@ -146,6 +146,10 @@ begin
     end if;
     if p_type='sponsor' and v_key='enabled' then
       if jsonb_typeof(v_value) <> 'boolean' then raise exception using errcode='PT400', message='Sponsor enabled must be a boolean.'; end if;
+      continue;
+    end if;
+    if p_type='episode' and v_key='comingSoon' then
+      if jsonb_typeof(v_value) <> 'boolean' then raise exception using errcode='PT400', message='Coming soon must be a boolean.'; end if;
       continue;
     end if;
     if v_key = 'tags' then
@@ -163,6 +167,7 @@ begin
       when 'description' then case when p_type='episode' then 10000 else 1000 end
       when 'homeQuote' then 1000 when 'destinationUrl' then 2000 when 'episodeId' then 100 when 'imageSrc' then 2000 when 'imageAlt' then 500 when 'youtubeUrl' then 2000
       when 'mainVideoSrc' then 2000 when 'aslVideoSrc' then 2000 when 'captionsSrc' then 2000
+      when 'interpreterImageSrc' then 2000 when 'interpreterImageAlt' then 500 when 'interpreterSubtitle' then 300 when 'date' then 10
       when 'excerpt' then 500 when 'heading' then 200 when 'subtitle' then 300 when 'episodeTitle' then 220
       when 'slug' then 100 when 'category' then 100 when 'duration' then 100
       when 'name' then case when p_type='category' then 100 else 160 end else 160 end;
@@ -199,17 +204,35 @@ begin
     end if;
   end if;
   if p_type='post' and p_data->>'template' not in ('story','announcement','interview') then raise exception using errcode='PT400', message='Unknown post template.'; end if;
+  if p_type='post' and coalesce(p_data->>'date','') <> '' then
+    if p_data->>'date' !~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' or left(p_data->>'date',4)='0000' then
+      raise exception using errcode='PT400', message='Use a calendar date in YYYY-MM-DD format.';
+    end if;
+    begin v_date := (p_data->>'date')::date;
+    exception when others then raise exception using errcode='PT400', message='Use a real calendar date.'; end;
+  end if;
   v_text := coalesce(p_data->>'youtubeUrl','');
   if v_text <> '' and v_text !~ '^https://www\.youtube\.com/watch\?v=[A-Za-z0-9_-]{11}$' then
     raise exception using errcode='PT400', message='YouTube URL must be a canonical HTTPS watch URL with an 11-character video ID.';
   end if;
   if not cms_private.valid_image_src(coalesce(p_data->>'imageSrc','')) then raise exception using errcode='PT400', message='Use an approved bundled image or a registered CMS image path.'; end if;
   if coalesce(p_data->>'imageSrc','') <> '' and coalesce(p_data->>'imageAlt','') ~ '^[[:space:]]*$' then raise exception using errcode='PT400', message='Image alternative text is required.'; end if;
+  if p_type='page' then
+    if not cms_private.valid_image_src(coalesce(p_data->>'interpreterImageSrc','')) then raise exception using errcode='PT400', message='Use an approved bundled image or a registered CMS interpreter image path.'; end if;
+    if coalesce(p_data->>'interpreterImageSrc','') <> '' and coalesce(p_data->>'interpreterImageAlt','') ~ '^[[:space:]]*$' then raise exception using errcode='PT400', message='Interpreter image alternative text is required.'; end if;
+  end if;
   foreach v_key in array array['mainVideoSrc','aslVideoSrc','captionsSrc'] loop
     if not cms_private.valid_media_src(p_data->>v_key) then raise exception using errcode='PT400', message='Invalid media URL: ' || v_key; end if;
   end loop;
-  if p_publishing and p_type='episode' and v_text='' and (coalesce(p_data->>'mainVideoSrc','')='' or coalesce(p_data->>'aslVideoSrc','')='') then
-    raise exception using errcode='PT400', message='An episode needs YouTube or both approved main and interpreter media before publication.';
+  if p_publishing and p_type='episode' and p_data->'comingSoon'='true'::jsonb then
+    foreach v_key in array array['youtubeUrl','mainVideoSrc','aslVideoSrc','captionsSrc'] loop
+      if coalesce(p_data->>v_key,'') <> '' then
+        raise exception using errcode='PT400', message='Remove media links before publishing a coming-soon episode: ' || v_key || '. Coming-soon status hides playback, not media URLs.';
+      end if;
+    end loop;
+  end if;
+  if p_publishing and p_type='episode' and coalesce(p_data->'comingSoon','false'::jsonb)<>'true'::jsonb and v_text='' and (coalesce(p_data->>'mainVideoSrc','')='' or coalesce(p_data->>'aslVideoSrc','')='') then
+    raise exception using errcode='PT400', message='An episode needs YouTube or both approved main and interpreter media, or must be marked coming soon before publication.';
   end if;
   return true;
 end;
@@ -291,13 +314,16 @@ $$;
 
 create function cms_private.assert_registered_image(p_data jsonb) returns void
 language plpgsql security invoker set search_path = '' as $$
-declare v_src text := coalesce(p_data->>'imageSrc','');
+declare v_src text; v_field text;
 begin
-  if left(v_src,16)='/api/media?path=' and not exists (
-    select 1 from public.cms_assets a join storage.objects o on o.id=a.storage_object_id and o.bucket_id='cms-images' and o.name=a.path
-    where a.path=substr(v_src,17) and o.owner_id=a.owner_id::text
-      and o.metadata->>'mimetype'=a.content_type and (o.metadata->>'size')::bigint=a.size_bytes
-  ) then raise exception using errcode='PT400', message='Upload and register this image before saving or publishing it.'; end if;
+  foreach v_field in array array['imageSrc','interpreterImageSrc'] loop
+    v_src := coalesce(p_data->>v_field,'');
+    if left(v_src,16)='/api/media?path=' and not exists (
+      select 1 from public.cms_assets a join storage.objects o on o.id=a.storage_object_id and o.bucket_id='cms-images' and o.name=a.path
+      where a.path=substr(v_src,17) and o.owner_id=a.owner_id::text
+        and o.metadata->>'mimetype'=a.content_type and (o.metadata->>'size')::bigint=a.size_bytes
+    ) then raise exception using errcode='PT400', message='Upload and register this image before saving or publishing it.'; end if;
+  end loop;
 end;
 $$;
 -- Append-only even for the function owner. No maintenance deletion or history rewrite API.
@@ -445,6 +471,7 @@ language sql immutable security invoker set search_path = '' as $baseline$
     "data": {
       "name": "Alma Beaty",
       "title": "Founder & CEO",
+      "heading": "",
       "bio": "Alma Beaty is the Founder and CEO of Inclusive Quest — a platform built to close the gap between the podcast world and the 1.5 billion Deaf and Hard of Hearing people it has yet to reach.\n\nA dual U.S. and Sierra Leonean citizen, Alma placed in the Top 10 at the 2026 Entrepreneur of Impact competition — the only Deaf or Hard of Hearing founder in the room.\n\nShe writes, she builds, she advocates. She has learned to find humor in the face of adversity while finding solutions that are often hidden in plain sight.\n\nShe has also learned to deliberately ignore outside noise, critics, and naysayers.\n\nHer philosophy is simple: access for one is access for all.",
       "story": "My why began when I realized that life doesn't discriminate. Humans do — consciously or not.\n\nGrowing up, I watched my neighbor's daughter, no older than 7 or 8, play by herself. Excluded from activities. Excluded from conversations. Forced to stay home while the rest of us went to school. To get her attention, people would shout at her. I watched all of this as a child — and even then, with full hearing, I felt a pain I couldn't yet put into words.\n\nLittle did I know that one day I'd be in her shoes.\n\nExcluded from activities. Excluded from conversations. Shouted at. The world kept evolving — but very little of that evolution made room for the Deaf and Hard-of-Hearing community.\n\nPodcasts are one of the largest educational and entertainment platforms available to anyone. But not everyone.\n\nInclusive Quest exists to change that. To build the bridge that should have always been there. To make sure that no child — and no adult — ever has to sit on the outside of a conversation again.",
       "homeQuote": "To build the bridge that should have always been there.",
@@ -472,8 +499,12 @@ language sql immutable security invoker set search_path = '' as $baseline$
       "title": "Home",
       "slug": "home",
       "heading": "Accessible Podcasts.",
-      "subtitle": "See Every Story. See Every Voice.",
+      "subtitle": "",
       "body": "Explore the podcast world through Sign Language interpretation, captions, transcripts, and topic-based discovery — with DHH audiences at the center.",
+      "interpreterImageSrc": "",
+      "interpreterImageAlt": "",
+      "interpreterTitle": "",
+      "interpreterSubtitle": "",
       "imageSrc": "",
       "imageAlt": ""
     }
@@ -523,17 +554,19 @@ language sql immutable security invoker set search_path = '' as $baseline$
     "data": {
       "title": "She Wears the Pants",
       "episodeTitle": "Calling All Women in Business: How to Stop Overthinking and Start Taking Smarter Risks",
+      "hostName": "",
+      "comingSoon": true,
+      "description": "Conversations that help women in business move past overthinking and take smarter risks. Accessible playback coming soon.",
       "category": "Podcast",
-      "duration": "Episode preview",
-      "badge": "Sign Language + Captions",
+      "youtubeUrl": "",
+      "tags": [],
       "mainVideoSrc": null,
       "aslVideoSrc": null,
       "captionsSrc": null,
-      "description": "Conversations that help women in business move past overthinking and take smarter risks. Accessible playback coming soon.",
-      "youtubeUrl": "",
+      "duration": "Episode preview",
+      "badge": "Sign Language + Captions",
       "imageSrc": "/she-wears-the-pants.svg",
-      "imageAlt": "She Wears the Pants podcast artwork",
-      "tags": []
+      "imageAlt": "She Wears the Pants podcast artwork"
     }
   },
   {
@@ -552,15 +585,6 @@ language sql immutable security invoker set search_path = '' as $baseline$
       "name": "Juliana Vadala",
       "title": "Certified ASL Interpreter",
       "quote": "As a professional ASL interpreter who enjoys discussing and sharing media with Deaf friends- the elephant in the room is that we can’t share podcasts or even discuss them because there is a glaring disparity- podcasts are inaccessible to Deaf individuals. While everyone has noticed this disparity no one has taken up the mantle to provide the Deaf community access to podcasts like Inclusive Quest.\n\n‘But podcasts have transcripts now- isn’t that enough?’ Simply put, it’s not enough. Deaf Americans’ primary language is American Sign Language not written English. To make podcasts accessible to the Deaf community, they need to be interpreted into ASL.\n\nAlma Beaty has identified this massive inequality and has worked tirelessly to bridge the gap. This is an important venture to include the Deaf community in the news, updates, conversations and entertainment the rest of the world enjoys via podcasts. Admirable and necessary, Inclusive Quest is making podcasts accessible one clip at a time."
-    }
-  },
-  {
-    "id": "testimonial-3",
-    "type": "testimonial",
-    "data": {
-      "name": "Y.S.",
-      "title": "Law Student",
-      "quote": "I used to take podcasts for granted — commuting, cooking, relaxing. Then I learned that 1.5 billion Deaf and Hard of Hearing people are entirely cut off from that world. Inclusive Quest isn’t just a company. It’s a movement toward a future where no one is left unheard or unseen."
     }
   }
 ]$data$::jsonb;
@@ -614,7 +638,8 @@ create policy cms_images_read_guard on storage.objects as restrictive for select
   bucket_id <> 'cms-images' or (
     (cms_private.member_role() is not null and storage.allow_any_operation(array['object.get_authenticated','object.get_authenticated_info','object.sign']))
     or (storage.allow_any_operation(array['object.get_authenticated','object.get_authenticated_info']) and exists(
-      select 1 from public.content_published p where p.data->>'imageSrc'='/api/media?path=' || storage.objects.name
+      select 1 from public.content_published p where (p.data->>'imageSrc'='/api/media?path=' || storage.objects.name
+        or (p.type='page' and p.data->>'interpreterImageSrc'='/api/media?path=' || storage.objects.name))
         and (p.type <> 'sponsor' or p.data->'enabled'='true'::jsonb)
     ))
   )
@@ -623,7 +648,8 @@ create policy cms_images_read on storage.objects for select to anon,authenticate
   bucket_id='cms-images' and (
     (cms_private.member_role() is not null and storage.allow_any_operation(array['object.get_authenticated','object.get_authenticated_info','object.sign']))
     or (storage.allow_any_operation(array['object.get_authenticated','object.get_authenticated_info']) and exists(
-      select 1 from public.content_published p where p.data->>'imageSrc'='/api/media?path=' || storage.objects.name
+      select 1 from public.content_published p where (p.data->>'imageSrc'='/api/media?path=' || storage.objects.name
+        or (p.type='page' and p.data->>'interpreterImageSrc'='/api/media?path=' || storage.objects.name))
         and (p.type <> 'sponsor' or p.data->'enabled'='true'::jsonb)
     ))
   )

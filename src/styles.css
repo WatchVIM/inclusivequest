@@ -321,7 +321,7 @@ input:focus-visible {
   font-weight: 950;
 }
 
-.hero-copy h1 span {
+.hero-copy h1 .hero-subtitle {
   display: block;
   margin-top: 8px;
   background: linear-gradient(90deg, var(--pink), var(--orange), var(--lime), var(--cyan));

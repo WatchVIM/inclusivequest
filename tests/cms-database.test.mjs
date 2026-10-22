@@ -110,7 +110,7 @@ test('CMS SQL: real PostgreSQL permissions, validation, history, replay, publica
     assert.equal(snapshot.documents.length,baseline.length);
     for(const doc of snapshot.documents) assert.deepEqual(Object.keys(doc).sort(),['id','published','type']);
     await as('authenticated',PUBLISHER);
-    await fails('select public.cms_publish($1,$2,$3)',['she-wears-the-pants',1,randomUUID()],'PT400');
+    assert.equal((await rpc('cms_publish',['she-wears-the-pants',1,randomUUID()])).document.published.comingSoon,true,'explicit coming-soon baseline can publish without offering playback');
   });
   let op;let saved;let initialRevision;
   await t.test('editor save is private; exact retries work and stale or reused requests conflict',async()=>{

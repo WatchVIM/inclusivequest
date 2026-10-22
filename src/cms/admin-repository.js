@@ -170,14 +170,16 @@ export function createAdminRepository({ config, client, create = createClient, c
       for (const record of result) {
         const source = mode === 'published' ? record.published : record.draft;
         if (!source) continue;
-        const path = imagePathFromSource(source.imageSrc);
-        if (path) {
-          if (!signed.has(path)) {
-            const { data, error } = await db.storage.from(IMAGE_BUCKET).createSignedUrl(path, 300);
-            if (error) throw backendError(error);
-            signed.set(path, data.signedUrl);
+        for (const field of ['imageSrc', 'interpreterImageSrc']) {
+          const path = imagePathFromSource(source[field]);
+          if (path) {
+            if (!signed.has(path)) {
+              const { data, error } = await db.storage.from(IMAGE_BUCKET).createSignedUrl(path, 300);
+              if (error) throw backendError(error);
+              signed.set(path, data.signedUrl);
+            }
+            source[field] = signed.get(path);
           }
-          source.imageSrc = signed.get(path);
         }
         if (mode === 'published') record.draft = source;
       }

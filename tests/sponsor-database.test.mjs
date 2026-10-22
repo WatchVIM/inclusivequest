@@ -39,8 +39,8 @@ for (const mode of ['fresh schema','existing CMS upgrade']) {
     const directHas=async id=>(await query('select id from public.content_published where id=$1',[id])).rows.length===1;
     await query('insert into auth.users(id) values ($1),($2),($3)',[EDITOR,PUBLISHER,STRANGER]);
     await query("insert into public.cms_members(user_id,role) values ($1,'editor'),($2,'publisher')",[EDITOR,PUBLISHER]);
+    const baseline=mode==='fresh schema' ? createSeedDocuments().map(({id,type,published})=>({id,type,data:canonicalContent(type,published)})) : await value('select cms_private.baseline_documents() as value');
     await as('authenticated',PUBLISHER);
-    const baseline=createSeedDocuments().map(({id,type,published})=>({id,type,data:canonicalContent(type,published)}));
     const initOperation=randomUUID();
     await rpc('cms_initialize',[JSON.stringify(baseline),initOperation]);
 
