@@ -44,3 +44,7 @@ Before final handover:
 6. Send admin invite and handover instructions, and provide a tutorial recording after testing.
 
 See `CONTENT_EDITING.md` for temporary source-content editing instructions and `CMS_HANDOVER.md` for the client-owned CMS activation criteria, full editor-access checklist and captioned tutorial plan. **Do not imply the CMS or tutorial is delivered yet.**
+
+## Admin review foundation
+
+A same-site `/admin` foundation now supports a clearly labelled, in-memory review workspace on local/Vercel preview builds. Its draft preview uses the actual public website, including admin-managed YouTube metadata, categories/tags and blog templates. Production editing, authentication, uploads, durable saving and publishing stay locked pending the client-owned backend. See [ADMIN_SETUP.md](ADMIN_SETUP.md) for the exact editable scope, review steps, Supabase integration contract, tests and activation checklist. No production CMS has been activated by this change.

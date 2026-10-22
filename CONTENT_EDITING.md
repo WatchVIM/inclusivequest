@@ -29,3 +29,5 @@ Inclusive Quest is **not yet connected to a production CMS**. Until one is confi
 **External accessibility service:** add the specific AccessiBe embed only after Alma authorizes/provisions the account; use the official script for her account, not a guessed ID. Keep native accessibility and ASL features regardless.
 
 **Client CMS and captioned tutorial:** not active. See `CMS_HANDOVER.md` for verified prerequisites, client-owned admin account, acceptance tests and tutorial outline. Do not promise independent no-code editing until those steps are completed.
+
+**Admin review foundation:** `/admin` is available for in-memory content review only on development/preview builds, with an actual-site draft preview and downloadable/importable draft files. Production editing and publishing remain disabled. See [ADMIN_SETUP.md](ADMIN_SETUP.md). The public video sections now share an adapter for published YouTube episodes and category/tag data; the backend endpoint is not connected yet.
