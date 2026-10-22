@@ -1,18 +1,21 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  ABOUT, BRAND, FEATURES, FOUNDER, PODCASTER_CHECKLIST, INVEST_FORM, MISSION_VISION_VALUES,
-  SOCIAL_LINKS, STATS, TEAM, TESTIMONIALS, TITLES, WORK_WITH_US_FORMS
+  BRAND, FEATURES, PODCASTER_CHECKLIST, INVEST_FORM,
+  SOCIAL_LINKS, STATS, TEAM, WORK_WITH_US_FORMS
 } from './content.js';
 import { useSyncedSidecar } from './utils/useSyncedSidecar.js';
+import { useContent } from './cms/ContentProvider.jsx';
+import { parseYouTubeUrl } from './cms/content-model.js';
 import './about.css';
 import './revisions.css';
+import SponsorPlacement from './sponsors/SponsorPlacement.jsx';
 
 const NAV = ['Home', 'About', 'Explore', 'Watch', 'Podcasts', 'For Platforms', 'For Podcasters'];
 const SLUGS = {
   Home: 'home', About: 'about', Explore: 'explore', Watch: 'watch',
   Podcasts: 'podcasts', 'For Platforms': 'for-platforms', 'For Podcasters': 'for-podcasters',
   'Sign In': 'sign-in', 'Sign Up': 'sign-up', Invest: 'invest', Privacy: 'privacy',
-  Accessibility: 'accessibility', 'Terms of Service': 'terms-of-service', Support: 'support'
+  Accessibility: 'accessibility', 'Terms of Service': 'terms-of-service', Support: 'support', Blog: 'blog'
 };
 const DESCRIPTIONS = {
   Home: 'Accessible podcasts with Sign Language interpretation, captions and searchable transcripts.',
@@ -25,8 +28,10 @@ const DESCRIPTIONS = {
   Invest: 'Learn about investment opportunities in Inclusive Quest.'
 };
 function currentPage() {
+  if (typeof window === 'undefined') return 'Home';
   const slug = window.location.hash.replace(/^#\/?/, '');
-  return Object.keys(SLUGS).find((key) => SLUGS[key] === slug) || 'Home';
+  if (slug.startsWith('blog/')) return 'Post:' + slug.slice(5);
+  return Object.keys(SLUGS).find((key) => SLUGS[key] === slug) || (slug ? 'Page:' + slug : 'Home');
 }
 function Icon({ name }) {
   const items = { play: '▶', search: '⌕', captions: 'CC', transcript: '▤',
@@ -43,13 +48,15 @@ function LogoMark({ compact = false }) {
   </div>;
 }
 function Header({ activeTab, navigate }) {
+  const { POSTS } = useContent();
+  const items = POSTS.length ? [...NAV, 'Blog'] : NAV;
   const [open, setOpen] = useState(false);
   const change = (item) => { navigate(item); setOpen(false); };
   return <header className="site-header">
     <div className="nav-shell">
       <button className="brand-button" onClick={() => change('Home')} aria-label="Inclusive Quest homepage"><LogoMark /></button>
       <nav className="desktop-nav" aria-label="Main navigation">
-        {NAV.map((item) => <button key={item} className={'nav-item ' + (activeTab === item ? 'active' : '')}
+        {items.map((item) => <button key={item} className={'nav-item ' + (activeTab === item ? 'active' : '')}
           aria-current={activeTab === item ? 'page' : undefined} onClick={() => change(item)}>{item}</button>)}
       </nav>
       <div className="header-actions">
@@ -61,19 +68,20 @@ function Header({ activeTab, navigate }) {
       </button>
     </div>
     {open && <nav className="mobile-nav" aria-label="Mobile navigation">
-      {[...NAV, 'Sign In', 'Sign Up'].map((item) => <button key={item}
+      {[...items, 'Sign In', 'Sign Up'].map((item) => <button key={item}
         onClick={() => change(item)}>{item}</button>)}
     </nav>}
   </header>;
 }
 function Hero({ navigate }) {
+  const { HOME } = useContent();
   return <section className="hero-section">
     <div className="glow glow-one" /><div className="glow glow-two" />
     <div className="hero-grid container">
       <div className="hero-copy">
         <div className="mission-pill"><Icon name="heart" /> Built for Deaf and Hard of Hearing communities</div>
-        <h1>Accessible Podcasts.<span>See Every Story. See Every Voice.</span></h1>
-        <p>Explore the podcast world through Sign Language interpretation, captions, transcripts, and topic-based discovery — with DHH audiences at the center.</p>
+        <h1>{HOME.heading}<span>{HOME.subtitle}</span></h1>
+        {HOME.paragraphs?.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
         <p className="hero-iq-question"><strong>What's Your IQ?</strong> Not Intelligence. Inclusivity Quotient. <em>Is your content reaching everyone?</em></p>
         <div className="hero-buttons">
           <button className="gradient-button" onClick={() => navigate('Watch')}><Icon name="play" /> Start Watching</button>
@@ -86,6 +94,8 @@ function Hero({ navigate }) {
   </section>;
 }
 function FeaturedPlayerPreview() {
+  const { TITLES, HOME } = useContent();
+  const title = TITLES[0];
   return <div className="preview-frame">
     <div className="preview-grid">
       <div className="interpreter-card preview-card">
@@ -97,10 +107,10 @@ function FeaturedPlayerPreview() {
         </div>
       </div>
       <div className="main-preview-card">
-        <img src={TITLES[0].poster} alt="She Wears the Pants podcast — Calling All Women in Business: How to Stop Overthinking and Start Taking Smarter Risks" />
+        {(HOME.imageSrc || title?.poster) && <img src={HOME.imageSrc || title.poster} alt={HOME.imageSrc ? HOME.imageAlt : title.imageAlt || title.episodeTitle || title.title} />}
         <div className="video-overlay" />
         <div className="caption-box">See Every Story. See Every Voice.</div>
-        <div className="fake-controls"><p><Icon name="mic" /> {TITLES[0].title}: {TITLES[0].episodeTitle}</p></div>
+        <div className="fake-controls"><p><Icon name="mic" /> {title ? `${title.title}: ${title.episodeTitle}` : 'Accessible conversations coming soon'}</p></div>
       </div>
     </div>
   </div>;
@@ -114,18 +124,22 @@ function FeatureGrid() {
   </div></section>;
 }
 function FounderPhoto({ compact = false }) {
+  const { FOUNDER } = useContent();
   const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [FOUNDER.photoSrc]);
   return <div className={compact ? 'founder-photo-shell compact' : 'founder-photo-shell'}>
-    {!failed ? <img src={FOUNDER.photoSrc} alt={FOUNDER.photoAlt} className="founder-photo" onError={() => setFailed(true)} /> :
+    {!failed && FOUNDER.photoSrc ? <img src={FOUNDER.photoSrc} alt={FOUNDER.photoAlt} className="founder-photo" onError={() => setFailed(true)} /> :
       <div className="founder-photo-placeholder" role="img" aria-label="Founder portrait to be added">
         <Icon name="people" /><span>Founder portrait</span>
       </div>}
   </div>;
 }
 function Newsletter() {
+  const { previewMode } = useContent();
   const [email, setEmail] = useState('');
   const submit = (event) => {
     event.preventDefault();
+    if (previewMode) return;
     const subject = encodeURIComponent('Inclusive Quest launch waitlist request');
     const body = encodeURIComponent('Please add ' + email.trim() + ' to your launch updates list. I consent to being contacted about the Inclusive Quest launch.');
     window.location.href = 'mailto:' + BRAND.contactEmail + '?subject=' + subject + '&body=' + body;
@@ -137,12 +151,13 @@ function Newsletter() {
       <label htmlFor="waitlist-email">Email address</label>
       <div><input id="waitlist-email" type="email" autoComplete="email" required
         placeholder="you@example.com" value={email} onChange={(event) => setEmail(event.target.value)} />
-        <button className="gradient-button" type="submit">Join Waitlist</button></div>
-      <small>This opens your email app to request launch updates. Direct online signup is coming soon.</small>
+        <button className="gradient-button" type="submit" disabled={previewMode}>Join Waitlist</button></div>
+      <small>{previewMode ? 'Email signup is disabled in this draft preview.' : 'This opens your email app to request launch updates. Direct online signup is coming soon.'}</small>
     </form>
   </section>;
 }
 function Testimonials() {
+  const { TESTIMONIALS } = useContent();
   return <section className="testimonials-section container" aria-labelledby="testimonials-heading">
     <p className="eyebrow">Testimonials</p><h2 id="testimonials-heading">Voices from our community</h2>
     {TESTIMONIALS.length ? <div className="testimonial-grid">{TESTIMONIALS.map((item, index) =>
@@ -151,6 +166,7 @@ function Testimonials() {
   </section>;
 }
 function FounderHomeSpotlight({ navigate }) {
+  const { FOUNDER } = useContent();
   return <section className="container founder-home-spotlight" aria-label="Founder story">
     <FounderPhoto compact />
     <div><p className="eyebrow">Founder Story</p><blockquote>“{FOUNDER.homeQuote}”</blockquote>
@@ -160,7 +176,7 @@ function FounderHomeSpotlight({ navigate }) {
   </section>;
 }
 function HomePage({ navigate }) {
-  return <><Hero navigate={navigate} /><FeatureGrid />
+  return <><Hero navigate={navigate} /><FeatureGrid /><SponsorPlacement placement="home" />
     <section className="home-panels-section">
       <div className="container panel-grid">
         <article className="info-panel"><h3>Captions & Transcripts</h3>
@@ -180,11 +196,35 @@ function HomePage({ navigate }) {
     <Testimonials /><section className="container invest-home"><h2>Invest in accessibility for everyone.</h2><p>Inclusive Quest is building toward an accessible podcast future. Explore opportunities to support that vision.</p><button className="glass-button" onClick={() => navigate('Invest')}>Invest in Inclusive Quest →</button></section><Newsletter />
   </>;
 }
+function EpisodeTags({ tags = [] }) {
+  return tags.length ? <ul className="episode-tags" aria-label="Episode topics">{tags.map((tag, index) => <li key={`${tag}-${index}`}>{tag}</li>)}</ul> : null;
+}
+function YouTubePlayer({ title, captionsEnabled }) {
+  const [loaded, setLoaded] = useState(false);
+  const youtube = parseYouTubeUrl(title.youtubeUrl);
+  if (!youtube) return null;
+  return <div className="youtube-player">
+    {loaded ? <iframe className="youtube-frame"
+      src={youtube.embedUrl + '?rel=0&cc_load_policy=' + (captionsEnabled ? '1' : '0')}
+      title={`${title.title}: ${title.episodeTitle || 'Podcast episode'} — YouTube player`}
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+      allowFullScreen referrerPolicy="strict-origin-when-cross-origin" /> :
+      <div className="youtube-consent">
+        {title.poster && <img src={title.poster} alt={title.imageAlt || title.title + ' episode artwork'} />}
+        <div><h3>{title.episodeTitle || title.title}</h3><p>The video loads from YouTube only after you choose to play it.</p>
+          <button type="button" className="gradient-button" onClick={() => setLoaded(true)}><Icon name="play" /> Load YouTube video</button>
+        </div>
+      </div>}
+    <p className="youtube-note">Hosted on YouTube. Captions and Sign Language interpretation depend on the uploaded video.
+      {' '}<a href={youtube.url} target="_blank" rel="noopener noreferrer">Watch on YouTube</a></p>
+  </div>;
+}
 function SyncedPlayer({ title, captionsEnabled }) {
   const mainRef = useRef(null);
   const aslRef = useRef(null);
   const [layout, setLayout] = useState('left');
-  useSyncedSidecar(mainRef, aslRef, true);
+  const hasEpisode = Boolean(title.mainVideoSrc && title.aslVideoSrc);
+  useSyncedSidecar(mainRef, aslRef, hasEpisode);
   useEffect(() => {
     const video = mainRef.current;
     if (!video) return;
@@ -196,8 +236,8 @@ function SyncedPlayer({ title, captionsEnabled }) {
     setCaptions();
     video.addEventListener('loadedmetadata', setCaptions);
     return () => video.removeEventListener('loadedmetadata', setCaptions);
-  }, [captionsEnabled, title.id]);
-  const hasEpisode = Boolean(title.mainVideoSrc && title.aslVideoSrc);
+  }, [captionsEnabled, title.id, title.mainVideoSrc, title.captionsSrc]);
+  const youtube = parseYouTubeUrl(title.youtubeUrl);
   return <div className="synced-player-shell">
     <div className="player-title-row">
       <div><p>Accessible Podcasts</p><h2>{title.title}</h2><small>{title.episodeTitle}</small></div>
@@ -205,50 +245,82 @@ function SyncedPlayer({ title, captionsEnabled }) {
         Move Sign Language {layout === 'left' ? 'Right' : 'Left'}</button></div>}
     </div>
     {hasEpisode ? <div className={'video-grid ' + layout}>
-      {layout === 'left' && <aside className="sidecar-panel"><div className="card-topline">Sign Language interpretation</div>
+      <aside className="sidecar-panel"><div className="card-topline">Sign Language interpretation</div>
         <video ref={aslRef} src={title.aslVideoSrc} muted playsInline preload="metadata"
-          aria-label="Sign Language interpreter video" className="sidecar-video" /></aside>}
+          aria-label="Sign Language interpreter video" className="sidecar-video" /></aside>
       <div className="main-video-panel"><video key={title.id} ref={mainRef} src={title.mainVideoSrc}
         poster={title.poster} controls playsInline preload="metadata" aria-label={title.title + ' episode'}>
         {title.captionsSrc && <track kind="captions" label="English" srcLang="en" src={title.captionsSrc} default />}
       </video></div>
-      {layout === 'right' && <aside className="sidecar-panel"><div className="card-topline">Sign Language interpretation</div>
-        <video ref={aslRef} src={title.aslVideoSrc} muted playsInline preload="metadata" aria-label="Sign Language interpreter video" className="sidecar-video" /></aside>}
-    </div> : <div className="watch-unavailable">
-      <img src={title.poster} alt={title.title + ' podcast artwork'} />
+    </div> : youtube ? <YouTubePlayer key={youtube.videoId} title={title} captionsEnabled={captionsEnabled} /> : <div className="watch-unavailable">
+      {title.poster && <img src={title.poster} alt={title.imageAlt || title.title + ' podcast artwork'} />}
       <div><p className="eyebrow">Episode coming soon</p><h3>Built-in Sign Language. Clear captions. Every conversation.</h3>
         <p>Podcast playback will appear here when the licensed episode and interpreter media are delivered. Sign Language interpretation will always remain visible.</p></div>
     </div>}
+    <div className="episode-details"><p className="eyebrow">{title.category}</p><p>{title.description}</p><EpisodeTags tags={title.tags} /></div>
   </div>;
 }
 function WatchPage({ selectedTitle, captionsEnabled, setSelectedTitle }) {
+  const { TITLES } = useContent();
+  if (!selectedTitle) return <section className="page-section"><div className="container"><h1>Watch accessible podcasts</h1><p className="quiet-note">Episodes will appear here when they are published.</p></div></section>;
   return <section className="page-section"><div className="container">
-    <SyncedPlayer title={selectedTitle} captionsEnabled={captionsEnabled} />
+    <SyncedPlayer key={selectedTitle.id} title={selectedTitle} captionsEnabled={captionsEnabled} />
+    <SponsorPlacement placement="episode" episodeId={selectedTitle.id} />
     <div className="title-grid">{TITLES.map((item) => <button key={item.id}
       className={'title-card ' + (item.id === selectedTitle.id ? 'selected' : '')} onClick={() => setSelectedTitle(item)}>
-      <img src={item.poster} alt={item.title + ' podcast artwork'} />
+      {item.poster ? <img src={item.poster} alt={item.imageAlt || item.title + ' podcast artwork'} /> : <div className="episode-artwork-placeholder" aria-hidden="true"><Icon name="mic" /></div>}
       <div><p>{item.category}</p><h3>{item.title}</h3><span>{item.badge}</span><small>{item.description}</small></div>
     </button>)}</div>
   </div></section>;
 }
 function PodcastsPage({ navigate, setSelectedTitle, explore = false }) {
+  const { TITLES, CATEGORIES } = useContent();
+  const [category, setCategory] = useState('');
   const [search, setSearch] = useState('');
   const filtered = TITLES.filter((item) =>
-    [item.title, item.episodeTitle, item.description, item.category, item.interpreter].join(' ').toLowerCase().includes(search.toLowerCase().trim()));
+    [item.title, item.episodeTitle, item.description, item.category, item.interpreter, ...(item.tags || [])].join(' ').toLowerCase().includes(search.toLowerCase().trim()) && (!category || item.category === category));
   return <section className="page-section"><div className="container">
     <div className="section-heading"><p className="eyebrow">{explore ? 'Discover' : 'Podcasts'}</p>
       <h1>{explore ? 'Explore accessible conversations.' : 'Every story deserves to be seen.'}</h1></div>
     <div className="search-bar"><Icon name="search" />
       <label className="sr-only" htmlFor="podcast-search">Search podcasts by topic or interpreter</label>
       <input id="podcast-search" placeholder="Search podcasts, topics, or interpreters" value={search} onChange={(e) => setSearch(e.target.value)} /></div>
+    {CATEGORIES.length > 0 && <div className="podcast-categories"><label htmlFor="podcast-category">Topic</label><select id="podcast-category" value={category} onChange={(event) => setCategory(event.target.value)}><option value="">All topics</option>{CATEGORIES.map((item) => <option value={item.name} key={item.id}>{item.name}</option>)}</select>{CATEGORIES.find((item) => item.name === category)?.description && <p>{CATEGORIES.find((item) => item.name === category).description}</p>}</div>}
     <div className="content-grid">{filtered.map((item) => <article key={item.id} className="content-card">
-      <img src={item.poster} alt={item.title + ' cover artwork'} />
+      {item.poster ? <img src={item.poster} alt={item.imageAlt || item.title + ' cover artwork'} /> : <div className="episode-artwork-placeholder" aria-hidden="true"><Icon name="mic" /></div>}
       <div><p>{item.category} · {item.badge}</p><h2>{item.title}</h2>
-        <strong>{item.episodeTitle}</strong><small>{item.description}</small>
+        <strong>{item.episodeTitle}</strong><small>{item.description}</small><EpisodeTags tags={item.tags} />
         <button onClick={() => { setSelectedTitle(item); navigate('Watch'); }}>View Episode</button></div>
     </article>)}</div>
     {!filtered.length && <p role="status" className="quiet-note">No podcasts matched this search yet.</p>}
   </div></section>;
+}
+function BlogPage({ navigate }) {
+  const { POSTS } = useContent();
+  return <section className="page-section"><div className="container">
+    <div className="section-heading"><p className="eyebrow">Inclusive Quest</p><h1>Stories & updates</h1></div>
+    {POSTS.length ? <div className="content-grid">{POSTS.map((post) => <article className="content-card" key={post.id}>
+      {post.imageSrc && <img src={post.imageSrc} alt={post.imageAlt} />}
+      <div><h2>{post.title}</h2><p>{post.excerpt}</p><button onClick={() => navigate('Post:' + post.slug)}>Read story →</button></div>
+    </article>)}</div> : <p className="quiet-note">Stories will appear here when they are published.</p>}
+  </div></section>;
+}
+function BlogPostPage({ post, navigate }) {
+  return <section className="page-section"><article className="container cms-article">
+    <button className="glass-button" onClick={() => navigate('Blog')}>← All stories</button>
+    {post ? <><p className="eyebrow">Inclusive Quest</p><h1>{post.title}</h1><p className="large-copy">{post.excerpt}</p>
+      {post.imageSrc && <img className="cms-page-image" src={post.imageSrc} alt={post.imageAlt} />}
+      {post.paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}</> :
+      <><h1>Story unavailable</h1><p>This story has not been published or is no longer available.</p></>}
+  </article></section>;
+}
+function ManagedPage({ item }) {
+  return <section className="page-section"><article className="container cms-article">
+    <p className="eyebrow">Inclusive Quest</p><h1>{item.heading || item.title}</h1>
+    {item.subtitle && <p className="large-copy">{item.subtitle}</p>}
+    {item.imageSrc && <img className="cms-page-image" src={item.imageSrc} alt={item.imageAlt} />}
+    {item.paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
+  </article></section>;
 }
 function ForPlatforms() {
   return <section className="page-section"><div className="container creator-grid">
@@ -279,6 +351,7 @@ function ForPodcasters() {
   </section>;
 }
 function TallySubmissionForm({ kind }) {
+  const { previewMode } = useContent();
   const form = kind === 'investment' ? INVEST_FORM : WORK_WITH_US_FORMS[kind];
   return <div className="tally-form-wrap" id={'submission-' + kind}>
     <div className="tally-form-heading">
@@ -287,14 +360,14 @@ function TallySubmissionForm({ kind }) {
         Open full form <span aria-hidden="true">↗</span>
       </a>
     </div>
-    <iframe
+    {previewMode ? <p className="quiet-note">The live submission form is disabled in this draft preview.</p> : <iframe
       key={kind}
       className="tally-form-frame"
       src={form.embedUrl}
       title={'Inclusive Quest — ' + form.heading}
       loading="lazy"
       referrerPolicy="strict-origin-when-cross-origin"
-    />
+    />}
     <p className="tally-form-note">This form is hosted by Tally. If the embedded form does not load, use “Open full form” above to submit securely on Tally.</p>
   </div>;
 }
@@ -309,16 +382,17 @@ function WorkWithUsForms() {
     <TallySubmissionForm kind={selected} />
   </div>;
 }
-function AboutPage() {
+function AboutPage({ navigate }) {
+  const { ABOUT, FOUNDER, MISSION_VISION_VALUES } = useContent();
   return <section className="page-section about-page"><div className="container">
     <section className="about-intro-grid" aria-labelledby="about-heading">
-      <div><p className="eyebrow">Our mission</p><h1 id="about-heading">About Inclusive Quest</h1></div>
+      <div><p className="eyebrow">Our mission</p><h1 id="about-heading">{ABOUT.heading}</h1>{ABOUT.subtitle && <p>{ABOUT.subtitle}</p>}</div>
       <div className="about-copy">{ABOUT.paragraphs.map((p) => <p key={p}>{p}</p>)}</div>
-      <div className="about-signature"><img className="about-signature-logo" src={BRAND.logoSrc} alt="Inclusive Quest" /></div>
+      <div className="about-signature">{ABOUT.imageSrc && <img className="cms-page-image" src={ABOUT.imageSrc} alt={ABOUT.imageAlt} />}<img className="about-signature-logo" src={BRAND.logoSrc} alt="Inclusive Quest" /></div>
     </section>
     <section className="mission-vision-values" aria-label="Our mission, vision and values">
       {MISSION_VISION_VALUES.map((item) => <article key={item.id} className="mvv-card" id={item.id}>
-        <p className="eyebrow">Inclusive Quest</p><h2>{item.heading}</h2><p>{item.text}</p>
+        <p className="eyebrow">Inclusive Quest</p><h2>{item.heading}</h2>{item.subtitle && <p>{item.subtitle}</p>}{item.paragraphs?.map((paragraph, index) => <p key={index}>{paragraph}</p>)}{item.imageSrc && <img className="cms-page-image" src={item.imageSrc} alt={item.imageAlt} />}
       </article>)}
     </section>
     <section className="bio-section" aria-labelledby="bio-heading">
@@ -353,7 +427,7 @@ function AboutPage() {
     <section className="invest-prompt" aria-labelledby="invest-about-heading">
       <h2 id="invest-about-heading">Invest in Inclusive Quest</h2>
       <p>Help us build the next generation of inclusive podcast experiences.</p>
-      <a href="#/invest" className="gradient-button link-button">Investment inquiry <span aria-hidden="true">↗</span></a>
+      <a href="#/invest" onClick={(event) => { event.preventDefault(); navigate('Invest'); }} className="gradient-button link-button">Investment inquiry <span aria-hidden="true">↗</span></a>
     </section>
   </div></section>;
 }
@@ -470,9 +544,13 @@ function AccessibilityPanel({
     </section>}
   </div>;
 }
-export default function App() {
-  const [activeTab, setActiveTab] = useState(currentPage);
-  const [selectedTitle, setSelectedTitle] = useState(TITLES[0]);
+export default function App({ previewMode = false, initialPage = 'Home', initialEpisodeId = '' }) {
+  const { TITLES, HOME, ABOUT, POSTS, PAGES } = useContent();
+  const mainRef = useRef(null);
+  const [activeTab, setActiveTab] = useState(() => previewMode ? (initialPage === 'Watch' ? 'Watch' : 'Home') : currentPage());
+  const [selectedTitleId, setSelectedTitleId] = useState(initialEpisodeId || TITLES[0]?.id || '');
+  const selectedTitle = TITLES.find((item) => item.id === selectedTitleId) || TITLES[0] || null;
+  const setSelectedTitle = (item) => setSelectedTitleId(item.id);
   const [captionsEnabled, setCaptionsEnabled] = useState(true);
   const [captionStyle, setCaptionStyle] = useState('white-black');
   const [textLevel, setTextLevel] = useState(0);
@@ -482,6 +560,7 @@ export default function App() {
   const [speechStatus, setSpeechStatus] = useState('');
   // Remember consent-based accessibility settings on this device, including optional auto-read.
   useEffect(() => {
+    if (previewMode) return;
     try {
       const saved = JSON.parse(window.localStorage.getItem('inclusive-quest-accessibility-v1') || 'null');
       if (!saved || typeof saved !== 'object') return;
@@ -492,15 +571,16 @@ export default function App() {
       if (typeof saved.readAloud === 'boolean') setReadAloud(saved.readAloud);
       if (typeof saved.autoRead === 'boolean') setAutoRead(saved.autoRead);
     } catch { /* Private browsing can deny local preference storage. */ }
-  }, []);
+  }, [previewMode]);
   useEffect(() => {
+    if (previewMode) return;
     try {
       window.localStorage.setItem('inclusive-quest-accessibility-v1', JSON.stringify({
         captionsEnabled, captionStyle, textLevel, settings, readAloud, autoRead
       }));
     } catch { /* Preferences remain usable in the current session. */ }
-  }, [captionsEnabled, captionStyle, textLevel, settings, readAloud, autoRead]);
-  const speechSupported = typeof window !== 'undefined' && 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+  }, [captionsEnabled, captionStyle, textLevel, settings, readAloud, autoRead, previewMode]);
+  const speechSupported = !previewMode && typeof window !== 'undefined' && 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
   const onStopRead = () => { if (speechSupported) window.speechSynthesis.cancel(); setSpeechStatus('Reading stopped.'); };
   const speak = (raw) => {
     if (!speechSupported) { setSpeechStatus('Read Aloud is unavailable in this browser.'); return; }
@@ -518,10 +598,10 @@ export default function App() {
     });
     setSpeechStatus('Reading aloud. Press Stop reading or Escape to stop.');
   };
-  const onReadPage = () => speak(document.getElementById('main-content')?.innerText || '');
+  const onReadPage = () => speak(mainRef.current?.innerText || '');
   useEffect(() => {
     if (!readAloud || !speechSupported) return;
-    const main = document.getElementById('main-content');
+    const main = mainRef.current;
     if (!main) return;
     let hoverTimer;
     const readSelection = () => {
@@ -548,31 +628,42 @@ export default function App() {
     return () => window.clearTimeout(timer);
   }, [autoRead, activeTab, speechSupported]);
   useEffect(() => {
+    if (previewMode) return undefined;
     const stopOnEscape = (event) => { if (event.key === 'Escape' && speechSupported) window.speechSynthesis.cancel(); };
     window.addEventListener('keydown', stopOnEscape);
     return () => window.removeEventListener('keydown', stopOnEscape);
-  }, [speechSupported]);
+  }, [speechSupported, previewMode]);
   useEffect(() => {
+    if (previewMode) return undefined;
     const onHash = () => setActiveTab(currentPage());
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
-  }, []);
+  }, [previewMode]);
+  const currentPost = activeTab.startsWith('Post:') ? POSTS.find((post) => post.slug === activeTab.slice(5)) : null;
+  const currentManagedPage = activeTab.startsWith('Page:') ? PAGES.find((item) => item.slug === activeTab.slice(5)) : null;
+  const pageTitle = activeTab === 'Home' ? HOME.title || 'Accessible Podcasts' : activeTab === 'About' ? ABOUT.title || 'About' : currentPost?.title || currentManagedPage?.title || activeTab;
+  const pageDescription = activeTab === 'Home' ? HOME.paragraphs?.[0] : activeTab === 'About' ? ABOUT.paragraphs?.[0] : currentPost?.excerpt || currentManagedPage?.subtitle;
   useEffect(() => {
-    document.title = 'Inclusive Quest | ' + (activeTab === 'Home' ? 'Accessible Podcasts' : activeTab);
+    if (previewMode) return;
+    document.title = 'Inclusive Quest | ' + pageTitle;
     const meta = document.querySelector('meta[name="description"]');
-    if (meta) meta.setAttribute('content', (DESCRIPTIONS[activeTab] || 'See Every Story. See Every Voice. — Inclusive Quest'));
+    if (meta) meta.setAttribute('content', (pageDescription || DESCRIPTIONS[activeTab] || 'See Every Story. See Every Voice. — Inclusive Quest'));
     window.scrollTo({ top: 0, behavior: 'instant' });
-  }, [activeTab]);
+  }, [activeTab, pageTitle, pageDescription, previewMode]);
   const navigate = (page) => {
     setActiveTab(page);
-    window.location.hash = '/' + SLUGS[page];
+    if (!previewMode) window.location.hash = '/' + (page.startsWith('Post:') ? 'blog/' + page.slice(5) : page.startsWith('Page:') ? page.slice(5) : SLUGS[page] || 'home');
+    else mainRef.current?.scrollIntoView?.({ block: 'start', behavior: 'instant' });
   };
   let page;
   if (activeTab === 'Home') page = <HomePage navigate={navigate} />;
-  else if (activeTab === 'About') page = <AboutPage />;
+  else if (activeTab === 'About') page = <AboutPage navigate={navigate} />;
   else if (activeTab === 'Explore' || activeTab === 'Podcasts') page =
     <PodcastsPage navigate={navigate} setSelectedTitle={setSelectedTitle} explore={activeTab === 'Explore'} />;
   else if (activeTab === 'Watch') page = <WatchPage selectedTitle={selectedTitle} setSelectedTitle={setSelectedTitle} captionsEnabled={captionsEnabled} />;
+  else if (activeTab === 'Blog') page = <BlogPage navigate={navigate} />;
+  else if (activeTab.startsWith('Post:')) page = <BlogPostPage post={currentPost} navigate={navigate} />;
+  else if (currentManagedPage) page = <ManagedPage item={currentManagedPage} />;
   else if (activeTab === 'Invest') page = <InvestPage />;
   else if (activeTab === 'For Platforms') page = <ForPlatforms />;
   else if (activeTab === 'For Podcasters') page = <ForPodcasters />;
@@ -580,15 +671,15 @@ export default function App() {
   else if (POLICIES[activeTab]) page = <PolicyPage page={activeTab} />;
   else page = <HomePage navigate={navigate} />;
   const classes = Object.entries(settings).filter(([, enabled]) => enabled).map(([key]) => key).join(' ');
-  return <div className={'app-shell ' + classes} data-text-level={textLevel} data-caption-style={captionStyle}>
-    <a className="skip-link" href="#main-content">Skip to content</a>
+  return <div className={'app-shell ' + (previewMode ? 'site-preview ' : '') + classes} data-text-level={textLevel} data-caption-style={captionStyle}>
+    <a className="skip-link" href={previewMode ? '#preview-main-content' : '#main-content'} onClick={(event) => { event.preventDefault(); mainRef.current?.focus(); }}>Skip to content</a>
     <Header activeTab={activeTab} navigate={navigate} />
-    <main id="main-content" tabIndex="-1">{page}</main>
+    <main ref={mainRef} id={previewMode ? 'preview-main-content' : 'main-content'} tabIndex="-1">{page}</main>
     <footer className="site-footer"><div className="container footer-inner">
       <div className="footer-brand"><LogoMark /><p className="footer-tagline">{BRAND.footerTagline}</p></div>
       <nav aria-label="Footer links" className="footer-links">
-        {['Privacy', 'Accessibility', 'Terms of Service', 'Support', 'Invest'].map((item) =>
-          <a key={item} href={'#/' + SLUGS[item]}>{item}</a>)}
+        {['Privacy', 'Accessibility', 'Terms of Service', 'Support', 'Invest', ...(POSTS.length ? ['Blog'] : [])].map((item) =>
+          <a key={item} href={'#/' + SLUGS[item]} onClick={(event) => { event.preventDefault(); navigate(item); }}>{item}</a>)}
         <a href={'mailto:' + BRAND.contactEmail}>{BRAND.contactEmail}</a>
         {SOCIAL_LINKS.map((item) => <a key={item.url} href={item.url} target="_blank" rel="noopener noreferrer">{item.label}</a>)}
       </nav>
@@ -601,3 +692,4 @@ export default function App() {
       onReadPage={onReadPage} onStopRead={onStopRead} speechSupported={speechSupported} speechStatus={speechStatus} />
   </div>;
 }
+

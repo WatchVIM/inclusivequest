@@ -44,3 +44,8 @@ Before final handover:
 6. Send admin invite and handover instructions, and provide a tutorial recording after testing.
 
 See `CONTENT_EDITING.md` for temporary source-content editing instructions and `CMS_HANDOVER.md` for the client-owned CMS activation criteria, full editor-access checklist and captioned tutorial plan. **Do not imply the CMS or tutorial is delivered yet.**
+
+## Admin review foundation
+
+The same-site `/admin` includes an authenticated CMS workspace with editor/publisher roles, server-saved drafts, private uploads, publishing and revision restore when the approved backend is configured. Without backend configuration it falls back to a clearly labelled, in-memory review workspace. Its draft preview uses the actual public website, including YouTube metadata, categories/tags and blog templates. Code completion is not live acceptance or production activation. See [ADMIN_SETUP.md](ADMIN_SETUP.md) for the exact editable scope, review steps, Supabase integration contract, tests and activation checklist. No production CMS has been activated by this change.
+

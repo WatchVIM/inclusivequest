@@ -1,0 +1,45 @@
+.sponsor-placement{margin-top:40px;margin-bottom:40px;max-width:1100px;min-width:0;box-sizing:border-box}
+.sponsor-disclosure{margin:0 0 10px;color:var(--muted,#c6c8d8);font-size:.75rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase}
+.sponsor-card{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);align-items:center;gap:26px;padding:24px;border:1px solid var(--stroke,#495067);border-radius:16px;background:var(--panel,#151b2a);color:var(--text,#fff);text-decoration:none;overflow-wrap:anywhere}
+.sponsor-card:hover{border-color:var(--cyan,#71e1ff)}
+.sponsor-card:focus-visible{outline:3px solid var(--cyan,#71e1ff);outline-offset:5px}
+.sponsor-artwork{min-width:0;display:grid;place-items:center;min-height:100px;aspect-ratio:3/1;border-radius:9px;background:#0c1320;overflow:hidden}
+.sponsor-artwork img{display:block;width:100%;height:100%;max-height:180px;object-fit:contain}
+.sponsor-image-fallback{padding:20px;color:#fff;text-align:center;font-size:1.2rem;font-weight:700}
+.sponsor-copy{display:flex;flex-direction:column;align-items:flex-start;gap:10px;min-width:0}
+.sponsor-copy strong{font-size:clamp(1.1rem,2vw,1.5rem);line-height:1.35}
+.sponsor-copy>span{color:var(--cyan,#71e1ff);text-decoration:underline;text-underline-offset:4px;font-weight:700}
+.sponsor-copy small{font-size:.8rem;color:var(--muted,#c6c8d8)}
+.synced-player-shell+.sponsor-placement{width:100%;margin-top:28px;margin-bottom:36px}
+.app-shell.highContrast .sponsor-card{background:#000!important;border:2px solid #fff!important;color:#fff!important}
+.app-shell.highContrast .sponsor-copy>span{color:#fff!important}
+@media(max-width:640px){.sponsor-placement{margin-top:26px;margin-bottom:26px}.sponsor-card{grid-template-columns:minmax(0,1fr);gap:18px;padding:18px}.sponsor-copy{gap:8px}.sponsor-artwork{min-height:80px}}
+
+.sponsor-review{background:#f3f5f8;color:#172332;min-height:100vh;font-family:Arial,sans-serif}
+.sponsor-review *{box-sizing:border-box}
+.sponsor-review-controls{max-width:1000px;margin:auto;padding:28px 24px}
+.sponsor-review-controls>a{color:#155a87;text-decoration:underline;text-underline-offset:3px}
+.sponsor-review-controls h1{font-size:clamp(1.7rem,4vw,2.35rem);line-height:1.2;margin:20px 0 12px}
+.sponsor-review-notice{border-left:4px solid #086b84;background:#e5f3f6;padding:14px 18px;line-height:1.6}
+.sponsor-review-notice p{margin:4px 0}
+.sponsor-review-tabs{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0}
+.sponsor-review-controls button,.sponsor-preview-toolbar button{min-height:44px;border:1px solid #8c9aaa;border-radius:8px;padding:10px 16px;background:white;color:#172332;cursor:pointer;font:inherit;font-weight:700}
+.sponsor-review-controls button[aria-pressed="true"],.sponsor-preview-toolbar button[aria-pressed="true"],.sponsor-review-controls button[type="submit"]{background:#124e6b;color:white;border-color:#124e6b}
+.sponsor-review-controls :is(a,button,input):focus-visible,.sponsor-preview-toolbar button:focus-visible{outline:3px solid #086b84;outline-offset:3px}
+.sponsor-review-fields{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.sponsor-review-field{min-width:0;display:flex;flex-direction:column;gap:7px}
+.sponsor-review-field label{font-weight:700}
+.sponsor-review-field input{width:100%;min-height:44px;border:1px solid #8c9aaa;border-radius:7px;padding:10px;font:inherit;background:white;color:#172332}
+.sponsor-review-field input[aria-invalid="true"]{border:2px solid #a32626}
+.sponsor-review-field small{line-height:1.5;color:#405264}
+.sponsor-review-field p{margin:0;color:#a32626;line-height:1.4}
+.sponsor-review-switch{display:flex;align-items:center;gap:10px;font-weight:700;min-height:48px;margin:12px 0}
+.sponsor-review-switch input{width:22px;height:22px;accent-color:#124e6b}
+.sponsor-review-actions{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
+.sponsor-review-status{min-height:26px;font-weight:700;line-height:1.5}
+.sponsor-review-guide{margin:18px 0;line-height:1.65}
+.sponsor-preview-toolbar{padding:18px 24px;background:#e2e9f0;display:flex;flex-wrap:wrap;align-items:center;gap:12px;border-top:1px solid #bcc9d4;border-bottom:1px solid #bcc9d4}
+.sponsor-preview-toolbar p{flex-basis:100%;margin:0;font-size:.9rem}
+.sponsor-review-site{isolation:isolate}
+.sponsor-review-site .site-preview .a11y-root{z-index:20}
+@media(max-width:640px){.sponsor-review-controls{padding:22px 16px}.sponsor-review-fields{grid-template-columns:1fr}.sponsor-review-actions button{flex:1 1 190px}.sponsor-preview-toolbar{padding:16px}.sponsor-review-tabs button{flex:1 1 180px}}
