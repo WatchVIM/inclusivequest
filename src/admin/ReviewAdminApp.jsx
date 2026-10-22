@@ -8,7 +8,7 @@ import {
 } from '../cms/content-model.js';
 import './admin.css';
 
-import { FIELD_SETS, Dialog, Field } from './admin-components.jsx';
+import { FIELD_SETS, Dialog, Field, SponsorControls } from './admin-components.jsx';
 const clone = value => JSON.parse(JSON.stringify(value));
 
 export default function ReviewAdminApp() {
@@ -109,6 +109,7 @@ export default function ReviewAdminApp() {
       {allowReview ? <><button className="admin-primary" onClick={() => setEntered(true)}>Open review workspace</button><p className="admin-muted">Preview only. This uses existing public content and in-memory drafts. Do not enter private information. Reloading clears changes unless you download a draft file.</p></>
         : <p>Review editing is available only in local development and the separate preview deployment. Production editing stays locked until secure setup is complete.</p>}
       <p className="admin-muted">No login credentials are collected here.</p>
+      {allowReview && <p><a href="/admin/sponsors">Review sponsor placements →</a></p>}
     </section>
   </main>;
 
@@ -140,8 +141,9 @@ export default function ReviewAdminApp() {
             <div className="admin-edit-title"><div><span className="admin-status">{dirty ? 'Unsaved field changes' : documentStatus(selected)}</span><h2 id="edit-title">{documentTitle(selected)}</h2></div><small>Local draft {selected.revision}</small></div>
             <form onSubmit={saveDraft} noValidate>
               {selected.type === 'post' && <p className="admin-template-label">Template: {POST_TEMPLATES[form.template]?.label}</p>}
+              {selected.type === 'sponsor' && <SponsorControls form={form} onChange={value => { setForm(value); setErrors({}); }} errors={errors} episodes={records.filter(record => record.type === 'episode')} />}
               {FIELD_SETS[selected.type].map(([name, label, type]) => <Field key={name} name={name} label={label} type={type} value={type === 'tags' ? tagsText : form[name]} onChange={value => { if (type === 'tags') setTagsText(value); else setForm(previous => ({ ...previous, [name]: value })); setErrors(previous => ({...previous, [name]: undefined})); }} error={errors[name]} categories={categories} fixedSlug={selected.type === 'page' && name === 'slug'} />)}
-              {['page', 'post', 'founder', 'episode'].includes(selected.type) && <fieldset className="admin-image-fields"><legend>Image & accessibility</legend>{[['imageSrc', 'Image URL / asset path'], ['imageAlt', 'Alternative text']].map(([name, label]) => <Field key={name} name={name} label={label} value={form[name]} onChange={value => setForm(previous => ({...previous, [name]: value}))} error={errors[name]} />)}
+              {['page', 'post', 'founder', 'episode', 'sponsor'].includes(selected.type) && <fieldset className="admin-image-fields"><legend>Image & accessibility</legend>{[['imageSrc', 'Image URL / asset path'], ['imageAlt', 'Alternative text']].map(([name, label]) => <Field key={name} name={name} label={label} value={form[name]} onChange={value => setForm(previous => ({...previous, [name]: value}))} error={errors[name]} />)}
                 <button type="button" disabled aria-describedby="upload-note">Upload image (not connected)</button><small id="upload-note">Secure image storage will be enabled with the client-owned backend.</small>
               </fieldset>}
               {selected.type === 'episode' && parseYouTubeUrl(form.youtubeUrl) && <div className="admin-video-check"><strong>Valid YouTube link format</strong><p>Video ID: {parseYouTubeUrl(form.youtubeUrl).videoId}</p><p className="admin-muted">Format validation does not verify video availability, permissions, captions or Sign Language interpretation. Check those in the website preview.</p></div>}
@@ -157,3 +159,4 @@ export default function ReviewAdminApp() {
     {preview && <Dialog title={preview === 'draft' ? 'Draft website preview' : 'Published reference preview'} wide onClose={() => setPreview(null)}><p className="admin-preview-note">{preview === 'draft' ? 'Draft preview only. This does not change the live website.' : 'Original public content snapshot. Live CMS publishing is not connected.'}</p><div className="admin-site-preview"><ContentProvider previewDocuments={preview === 'draft' ? records : records.filter(record => record.published).map(record => ({...record, draft: record.published}))}><App previewMode /></ContentProvider></div></Dialog>}
   </div>;
 }
+

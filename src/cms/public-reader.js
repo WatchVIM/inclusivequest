@@ -1,6 +1,8 @@
 import { createSeedDocuments, parseYouTubeUrl, validateDocument } from './content-model.js';
+import { validateSponsorSlot, safeSponsorImage, safeSponsorDestination } from '../sponsors/sponsor-model.js';
+import { canonicalContent } from './canonical-content.js';
 
-const TYPES = new Set(['page', 'founder', 'testimonial', 'episode', 'post', 'category']);
+const TYPES = new Set(['page', 'founder', 'testimonial', 'episode', 'post', 'category', 'sponsor']);
 const PAGE_IDS = ['page-home', 'page-about', 'page-mission', 'page-vision', 'page-values'];
 const isRecord = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 const text = (value) => typeof value === 'string' ? value : '';
@@ -84,6 +86,11 @@ export function buildPublicContent(documents = createSeedDocuments(), { preview 
     })),
     CATEGORIES: selected.filter((document) => document.type === 'category').map(({ id, data }) => ({
       id, name: text(data.name), slug: text(data.slug), description: text(data.description)
+    })),
+    SPONSORS: selected.filter(({ type, data }) => type === 'sponsor' && data.enabled === true && !Object.keys(validateSponsorSlot(data)).length
+      && (data.targeting !== 'episode' || selected.some(document => document.type === 'episode' && document.id === data.episodeId))).map(({ id, data }) => ({
+      id, placement: data.placement, enabled: true, name: text(data.name), imageSrc: safeSponsorImage(data.imageSrc),
+      imageAlt: text(data.imageAlt), destinationUrl: safeSponsorDestination(data.destinationUrl), targeting: data.targeting, episodeId: text(data.episodeId)
     }))
   };
 }
@@ -94,7 +101,7 @@ export function parsePublicSnapshot(payload) {
     throw new Error('Unsupported public content snapshot.');
   }
   const seen = new Set();
-  return payload.documents.map((document) => {
+  const documents = payload.documents.map((document) => {
     if (!isRecord(document) || typeof document.id !== 'string' || !/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,119}$/.test(document.id)
       || !TYPES.has(document.type) || seen.has(document.id) || Object.hasOwn(document, 'draft')) {
       throw new Error('Invalid public content document.');
@@ -103,9 +110,12 @@ export function parsePublicSnapshot(payload) {
     if (document.published !== null && (!isRecord(document.published) || Object.keys(validateDocument(document.type, document.published)).length)) {
       throw new Error('Invalid published content.');
     }
+    if (document.type === 'sponsor' && (!document.published?.enabled || Object.keys(validateSponsorSlot(document.published)).length)) return null;
     // Explicit allowlist avoids retaining metadata or internal editor state in public context.
-    return { id: document.id, type: document.type, published: document.published };
-  });
+    return { id: document.id, type: document.type, published: document.type === 'sponsor' ? canonicalContent('sponsor', document.published) : document.published };
+  }).filter(Boolean);
+  return documents.filter(document => document.type !== 'sponsor' || document.published.targeting !== 'episode'
+    || documents.some(target => target.type === 'episode' && target.id === document.published.episodeId && target.published));
 }
 
 export async function fetchPublicContent({ fetchImpl = globalThis.fetch, signal } = {}) {
@@ -122,3 +132,4 @@ export async function fetchPublicContent({ fetchImpl = globalThis.fetch, signal 
     return buildPublicContent();
   }
 }
+

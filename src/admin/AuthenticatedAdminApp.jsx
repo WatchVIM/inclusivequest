@@ -6,7 +6,7 @@ import {
   CONTENT_TYPES, TYPE_LABELS, POST_TEMPLATES, createDraft, documentTitle,
   hasDraftChanges, validateDocument, validateDraftCollection, publicationIssues, parseYouTubeUrl
 } from '../cms/content-model.js';
-import { FIELD_SETS, Dialog, Field } from './admin-components.jsx';
+import { FIELD_SETS, Dialog, Field, SponsorControls } from './admin-components.jsx';
 import './admin.css';
 
 const clone = value => JSON.parse(JSON.stringify(value));
@@ -58,7 +58,7 @@ export default function AuthenticatedAdminApp({ repository, deploymentEnvironmen
   const workingForm = selected?.type === 'episode' ? { ...form, tags: [...new Set(tagsText.split(',').map(tag => tag.trim()).filter(Boolean))] } : form;
   const dirty = Boolean(selected && (newRecord || JSON.stringify(workingForm) !== JSON.stringify(selected.draft)));
   const publisher = member?.role === 'publisher';
-  const publishIssues = selected ? publicationIssues(selected.type, workingForm) : {};
+  const publishIssues = selected ? publicationIssues(selected.type, workingForm, records, selected.id) : {};
 
   const changeGate = value => { gateRef.current = value; setGate(value); };
   const selectRecord = (record, nextSection = record?.type || section) => {
@@ -217,7 +217,8 @@ export default function AuthenticatedAdminApp({ repository, deploymentEnvironmen
     if (dirty) { setMessage('Save your draft first so the preview includes your latest field changes.'); return; }
     run('Could not prepare preview', async current => {
       const documents = await repository.previewDocuments(mode === 'published' ? records.filter(record => record.published) : records, mode);
-      if (current()) setPreview({ mode, documents });
+      const sponsor = selected?.type === 'sponsor' ? (mode === 'published' ? selected.published : selected.draft) : null;
+      if (current()) setPreview({ mode, documents, initialPage: sponsor?.placement === 'episode' ? 'Watch' : 'Home', initialEpisodeId: sponsor?.targeting === 'episode' ? sponsor.episodeId : '' });
     });
   };
   const confirmPublication = mode => {
@@ -305,8 +306,9 @@ export default function AuthenticatedAdminApp({ repository, deploymentEnvironmen
             <div className="admin-edit-title"><div><span className="admin-status">{dirty ? 'Unsaved field changes' : statusLabel(selected)}</span><h2 id="edit-title">{documentTitle(selected)}</h2></div><small>{newRecord ? 'Not saved yet' : `Revision ${selected.revision}`}</small></div>
             <form onSubmit={saveDraft} noValidate><fieldset className="admin-form-fields" disabled={Boolean(busy)}>
               {selected.type === 'post' && <p className="admin-template-label">Template: {POST_TEMPLATES[form.template]?.label}</p>}
+              {selected.type === 'sponsor' && <SponsorControls form={form} onChange={value => { setForm(value); setErrors({}); }} errors={errors} episodes={records.filter(record => record.type === 'episode')} />}
               {FIELD_SETS[selected.type].map(([name, label, type]) => <Field key={name} name={name} label={label} type={type} value={type === 'tags' ? tagsText : form[name]} onChange={value => { if (type === 'tags') setTagsText(value); else setForm(previous => ({ ...previous, [name]: value })); setErrors(previous => ({ ...previous, [name]: undefined })); }} error={errors[name]} categories={categories} fixedSlug={selected.type === 'page' && name === 'slug'} connected />)}
-              {['page', 'post', 'founder', 'episode'].includes(selected.type) && <fieldset className="admin-image-fields"><legend>Image & accessibility</legend>
+              {['page', 'post', 'founder', 'episode', 'sponsor'].includes(selected.type) && <fieldset className="admin-image-fields"><legend>Image & accessibility</legend>
                 {[['imageSrc', 'Stored image reference'], ['imageAlt', 'Alternative text']].map(([name, label]) => <Field key={name} name={name} label={label} value={form[name]} onChange={value => { setForm(previous => ({ ...previous, [name]: value })); setErrors(previous => ({ ...previous, [name]: undefined })); }} error={errors[name]} connected />)}
                 <button type="button" disabled={Boolean(newRecord)} onClick={() => fileRef.current.click()} aria-describedby="upload-note">Upload image</button>{form.imageSrc && <button className="admin-remove-image" type="button" onClick={() => { setForm(previous => ({ ...previous, imageSrc: '', imageAlt: '' })); setMessage('Image removed from the fields. Save the draft to keep this change.'); }}>Remove image from draft</button>}<input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={uploadImage} />
                 <small id="upload-note">{newRecord ? 'Save this new draft before uploading its image.' : 'JPEG, PNG or WebP, up to 4 MB. Add alternative text first. Draft uploads are private.'}</small>
@@ -323,7 +325,8 @@ export default function AuthenticatedAdminApp({ repository, deploymentEnvironmen
       </main>
     </div>
     {pending && <Dialog title={pending.title} onClose={() => setPending(null)}><p>{pending.description}</p><div className="admin-dialog-actions"><button onClick={() => setPending(null)}>Keep editing</button><button className="admin-primary" onClick={() => { const action = pending.action; setPending(null); action(); }}>Continue</button></div></Dialog>}
-    {preview && <Dialog title={preview.mode === 'draft' ? 'Draft website preview' : 'Published website preview'} wide onClose={() => setPreview(null)}><p className="admin-preview-note">{preview.mode === 'draft' ? 'Private draft preview. Nothing is published by viewing this screen. Image preview links expire; close and reopen to refresh them.' : `Published content snapshot for ${publishTarget}. Unsaved and draft-only changes are excluded.`}</p><div className="admin-site-preview"><ContentProvider previewDocuments={preview.documents}><App previewMode /></ContentProvider></div></Dialog>}
+    {preview && <Dialog title={preview.mode === 'draft' ? 'Draft website preview' : 'Published website preview'} wide onClose={() => setPreview(null)}><p className="admin-preview-note">{preview.mode === 'draft' ? 'Private draft preview. Nothing is published by viewing this screen. Image preview links expire; close and reopen to refresh them.' : `Published content snapshot for ${publishTarget}. Unsaved and draft-only changes are excluded.`}</p><div className="admin-site-preview"><ContentProvider previewDocuments={preview.documents}><App previewMode initialPage={preview.initialPage} initialEpisodeId={preview.initialEpisodeId} /></ContentProvider></div></Dialog>}
     {history && <Dialog title="Revision history" onClose={() => setHistory(null)}><p>{history.title}. Restoring creates a saved draft and leaves the live version unchanged.</p>{history.revisions.length ? <ol className="admin-revision-list">{history.revisions.map(revision => <li key={revision.id}><div><strong>{revision.action || 'Saved revision'}</strong><span>{revision.createdAt ? new Date(revision.createdAt).toLocaleString() : 'Date unavailable'}</span></div><button onClick={() => restoreRevision(revision)}>Restore as draft</button></li>)}</ol> : <p>No saved revisions yet.</p>}</Dialog>}
   </div>;
 }
+

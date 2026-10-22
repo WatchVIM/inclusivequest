@@ -17,7 +17,7 @@ create table public.cms_members (
 );
 create table public.content_drafts (
   id text primary key check (id ~ '^[a-zA-Z0-9][a-zA-Z0-9_-]{0,99}$'),
-  type text not null check (type in ('page','post','founder','testimonial','episode','category')),
+  type text not null check (type in ('page','post','founder','testimonial','episode','category','sponsor')),
   schema_version integer not null default 1 check (schema_version = 1),
   data jsonb not null,
   revision bigint not null check (revision > 0),
@@ -111,6 +111,15 @@ language sql immutable security invoker set search_path = '' as $$
     or (length(p_src) <= 2000 and p_src ~ '^https://[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)+(/[A-Za-z0-9._~!$&()*+,;=:@%/?#-]*)?$'
       and p_src !~ '[[:space:]\\]');
 $$;
+-- Sponsor destinations are ordinary outbound HTTPS links, never embed code,
+-- credentials, custom ports, localhost-only names, whitespace or backslashes.
+create function cms_private.valid_sponsor_destination(p_src text) returns boolean
+language sql immutable security invoker set search_path = '' as $$
+  select coalesce(length(p_src) between 1 and 2000
+    and p_src ~ '^https://[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)+([/?#][A-Za-z0-9._~!$&()*+,;=:@%/?#-]*)?$'
+    and p_src !~ '[[:space:][:cntrl:]\\]'
+    and p_src !~ '%($|[^0-9A-Fa-f]|[0-9A-Fa-f]($|[^0-9A-Fa-f]))', false);
+$$;
 create function cms_private.validate_document(p_type text, p_data jsonb, p_publishing boolean default false) returns boolean
 language plpgsql immutable security invoker set search_path = '' as $$
 declare v_allowed text[]; v_required text[]; v_key text; v_value jsonb; v_max integer; v_text text;
@@ -125,11 +134,19 @@ begin
     when 'testimonial' then v_allowed := array['name','title','quote']; v_required := array['name','quote'];
     when 'episode' then v_allowed := array['title','episodeTitle','description','category','youtubeUrl','tags','mainVideoSrc','aslVideoSrc','captionsSrc','duration','badge','interpreter','imageSrc','imageAlt']; v_required := array['title','episodeTitle','description','category','tags'];
     when 'category' then v_allowed := array['name','slug','description']; v_required := array['name','slug'];
+    when 'sponsor' then v_allowed := array['placement','enabled','name','imageSrc','imageAlt','destinationUrl','targeting','episodeId']; v_required := array['placement','enabled','targeting'];
     else raise exception using errcode = 'PT400', message = 'Unknown content type.';
   end case;
+  if p_type='sponsor' and not (p_data ?& v_allowed) then
+    raise exception using errcode='PT400', message='All sponsor fields are required; use false and empty strings for an incomplete draft.';
+  end if;
   for v_key, v_value in select key, value from jsonb_each(p_data) loop
     if not (v_key = any(v_allowed)) then
       raise exception using errcode = 'PT400', message = 'Unsupported content field: ' || v_key;
+    end if;
+    if p_type='sponsor' and v_key='enabled' then
+      if jsonb_typeof(v_value) <> 'boolean' then raise exception using errcode='PT400', message='Sponsor enabled must be a boolean.'; end if;
+      continue;
     end if;
     if v_key = 'tags' then
       if jsonb_typeof(v_value) <> 'array' then raise exception using errcode='PT400', message='Tags must be an array.'; end if;
@@ -139,12 +156,12 @@ begin
       ) then raise exception using errcode='PT400', message='Use up to 20 nonempty tags, each at most 60 characters.'; end if;
       continue;
     end if;
-    if v_value = 'null'::jsonb and not (v_key = any(v_required)) then continue; end if;
+    if p_type <> 'sponsor' and v_value = 'null'::jsonb and not (v_key = any(v_required)) then continue; end if;
     if jsonb_typeof(v_value) <> 'string' then raise exception using errcode='PT400', message='Content field must be text: ' || v_key; end if;
     v_max := case v_key
       when 'body' then 40000 when 'bio' then 20000 when 'story' then 20000 when 'quote' then 10000
       when 'description' then case when p_type='episode' then 10000 else 1000 end
-      when 'homeQuote' then 1000 when 'imageSrc' then 2000 when 'imageAlt' then 500 when 'youtubeUrl' then 2000
+      when 'homeQuote' then 1000 when 'destinationUrl' then 2000 when 'episodeId' then 100 when 'imageSrc' then 2000 when 'imageAlt' then 500 when 'youtubeUrl' then 2000
       when 'mainVideoSrc' then 2000 when 'aslVideoSrc' then 2000 when 'captionsSrc' then 2000
       when 'excerpt' then 500 when 'heading' then 200 when 'subtitle' then 300 when 'episodeTitle' then 220
       when 'slug' then 100 when 'category' then 100 when 'duration' then 100
@@ -157,6 +174,30 @@ begin
     end if;
   end loop;
   if p_data ? 'slug' and (p_data->>'slug') !~ '^[a-z0-9]+(-[a-z0-9]+)*$' then raise exception using errcode='PT400', message='Invalid slug.'; end if;
+  if p_type='sponsor' then
+    if p_data->>'placement' not in ('home','episode') then raise exception using errcode='PT400', message='Choose a supported sponsor placement.'; end if;
+    if p_data->>'targeting' not in ('undecided','shared','episode') then raise exception using errcode='PT400', message='Choose supported sponsor targeting.'; end if;
+    if p_data->>'placement'='home' and (p_data->>'targeting'<>'undecided' or p_data->>'episodeId'<>'') then
+      raise exception using errcode='PT400', message='Homepage sponsors do not use episode targeting.';
+    end if;
+    if p_data->>'targeting'<>'episode' and p_data->>'episodeId'<>'' then
+      raise exception using errcode='PT400', message='Only per-episode sponsors can specify an episode ID.';
+    end if;
+    if p_data->>'episodeId'<>'' and p_data->>'episodeId' !~ '^[a-zA-Z0-9][a-zA-Z0-9_-]{0,99}$' then
+      raise exception using errcode='PT400', message='Use a valid episode ID.';
+    end if;
+    if p_data->>'destinationUrl'<>'' and not cms_private.valid_sponsor_destination(p_data->>'destinationUrl') then
+      raise exception using errcode='PT400', message='Use a full HTTPS sponsor destination without credentials, whitespace, or a custom port.';
+    end if;
+    if p_publishing and p_data->'enabled'='true'::jsonb then
+      foreach v_key in array array['name','imageSrc','imageAlt','destinationUrl'] loop
+        if p_data->>v_key ~ '^[[:space:]]*$' then raise exception using errcode='PT400', message='Enabled sponsor publication requires: ' || v_key; end if;
+      end loop;
+      if p_data->>'placement'='episode' and (p_data->>'targeting'='undecided' or (p_data->>'targeting'='episode' and p_data->>'episodeId'='')) then
+        raise exception using errcode='PT400', message='Resolve episode targeting before publishing an enabled sponsor.';
+      end if;
+    end if;
+  end if;
   if p_type='post' and p_data->>'template' not in ('story','announcement','interview') then raise exception using errcode='PT400', message='Unknown post template.'; end if;
   v_text := coalesce(p_data->>'youtubeUrl','');
   if v_text <> '' and v_text !~ '^https://www\.youtube\.com/watch\?v=[A-Za-z0-9_-]{11}$' then
@@ -191,7 +232,10 @@ create policy cms_members_read_self on public.cms_members for select to authenti
 create policy cms_staff_read_drafts on public.content_drafts for select to authenticated using ((select cms_private.member_role()) is not null);
 create policy cms_staff_read_revisions on public.content_revisions for select to authenticated using ((select cms_private.member_role()) is not null);
 create policy cms_staff_read_assets on public.cms_assets for select to authenticated using ((select cms_private.member_role()) is not null);
-create policy cms_read_published on public.content_published for select to anon, authenticated using (true);
+-- Off sponsors are private even after an explicit publisher snapshot update.
+create policy cms_read_published on public.content_published for select to anon, authenticated using (
+  type <> 'sponsor' or data->'enabled'='true'::jsonb or (select cms_private.member_role()) is not null
+);
 -- No client INSERT/UPDATE/DELETE grants or policies exist on any CMS table.
 
 create function cms_private.document_json(p_id text) returns jsonb
@@ -228,7 +272,7 @@ language plpgsql stable security invoker set search_path = '' as $$
 begin
   if not cms_private.is_activated() then raise exception using errcode='PT503', message='CMS publication is not activated.'; end if;
   return jsonb_build_object('schemaVersion',1,'documents',coalesce((select jsonb_agg(jsonb_build_object('id',p.id,'type',p.type,'published',p.data) order by p.id)
-    from public.content_published p),'[]'::jsonb));
+    from public.content_published p where p.type <> 'sponsor' or p.data->'enabled'='true'::jsonb),'[]'::jsonb));
 end;
 $$;
 
@@ -262,6 +306,25 @@ language plpgsql security invoker set search_path = '' as $$
 begin raise exception using errcode='PT403', message='CMS revision history is append-only.'; end;
 $$;
 create trigger cms_revision_immutable before update or delete on public.content_revisions for each row execute function cms_private.reject_revision_change();
+
+-- Called only by the mutation helper under the global CMS write lock. Drafts
+-- may overlap; only enabled published snapshots reserve placements. Check the
+-- actual public target, not an unpublished episode draft or browser claims.
+create function cms_private.assert_sponsor_publication(p_id text,p_data jsonb) returns void
+language plpgsql security invoker set search_path = '' as $$
+begin
+  if p_data->'enabled'<>'true'::jsonb then return; end if;
+  if p_data->>'placement'='episode' and p_data->>'targeting'='episode' and not exists(
+    select 1 from public.content_published p where p.id=p_data->>'episodeId' and p.type='episode'
+  ) then raise exception using errcode='PT400', message='Publish the selected episode before enabling its sponsor.'; end if;
+  if exists(
+    select 1 from public.content_published p where p.type='sponsor' and p.id<>p_id and p.data->'enabled'='true'::jsonb
+      and p.data->>'placement'=p_data->>'placement'
+      and (p_data->>'placement'='home' or p_data->>'targeting'='shared' or p.data->>'targeting'='shared'
+        or p.data->>'episodeId'=p_data->>'episodeId')
+  ) then raise exception using errcode='PT400', message='An enabled published sponsor already occupies this placement. Disable or unpublish it first.'; end if;
+end;
+$$;
 
 create function cms_private.mutate_document(p_action text, p_id text, p_type text, p_data jsonb,
   p_expected_revision bigint, p_operation_id uuid, p_revision_id uuid default null) returns jsonb
@@ -301,6 +364,11 @@ begin
   end if;
   perform cms_private.validate_document(v_type,v_data,p_action='publish');
   if p_action <> 'unpublish' then perform cms_private.assert_registered_image(v_data); end if;
+  if p_action='publish' and v_type='sponsor' then perform cms_private.assert_sponsor_publication(p_id,v_data); end if;
+  if p_action='unpublish' and v_type='episode' and exists(
+    select 1 from public.content_published p where p.type='sponsor' and p.data->'enabled'='true'::jsonb
+      and p.data->>'placement'='episode' and p.data->>'targeting'='episode' and p.data->>'episodeId'=p_id
+  ) then raise exception using errcode='PT400', message='Disable or unpublish this episode''s sponsors before unpublishing the episode.'; end if;
   insert into public.content_drafts(id,type,data,revision,updated_by,updated_at)
     values(p_id,v_type,v_data,v_revision,v_actor,now())
     on conflict(id) do update set data=excluded.data,revision=excluded.revision,updated_by=excluded.updated_by,updated_at=excluded.updated_at;
@@ -547,6 +615,7 @@ create policy cms_images_read_guard on storage.objects as restrictive for select
     (cms_private.member_role() is not null and storage.allow_any_operation(array['object.get_authenticated','object.get_authenticated_info','object.sign']))
     or (storage.allow_any_operation(array['object.get_authenticated','object.get_authenticated_info']) and exists(
       select 1 from public.content_published p where p.data->>'imageSrc'='/api/media?path=' || storage.objects.name
+        and (p.type <> 'sponsor' or p.data->'enabled'='true'::jsonb)
     ))
   )
 );
@@ -555,6 +624,7 @@ create policy cms_images_read on storage.objects for select to anon,authenticate
     (cms_private.member_role() is not null and storage.allow_any_operation(array['object.get_authenticated','object.get_authenticated_info','object.sign']))
     or (storage.allow_any_operation(array['object.get_authenticated','object.get_authenticated_info']) and exists(
       select 1 from public.content_published p where p.data->>'imageSrc'='/api/media?path=' || storage.objects.name
+        and (p.type <> 'sponsor' or p.data->'enabled'='true'::jsonb)
     ))
   )
 );
@@ -584,3 +654,4 @@ grant execute on function public.cms_session(),public.cms_list_documents(),publi
 grant execute on function public.cms_public_snapshot() to anon,authenticated;
 
 commit;
+

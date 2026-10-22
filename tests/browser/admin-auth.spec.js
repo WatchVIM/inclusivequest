@@ -58,3 +58,53 @@ test('editor publishing is disabled and sign-out confirmation can be cancelled',
   await expect(page.getByRole('button', { name: 'Email me a sign-in link' })).toBeVisible();
   await expect(page.getByLabel('Page heading', { exact: true })).toHaveCount(0);
 });
+
+
+test('private image upload and revision restore require saved drafts and preserve publication', async ({ page }) => {
+  await page.goto(fixture);
+  const before = await page.evaluate(() => window.adminFixture.getRecords()[0].published.heading);
+  await page.getByLabel('Alternative text', { exact: true }).fill('Test artwork for browser verification');
+  await page.locator('input[type="file"]').setInputFiles({ name: 'fixture.png', mimeType: 'image/png', buffer: Buffer.from('test-only-file') });
+  await expect(page.getByRole('status')).toContainText('Image uploaded privately');
+  await expect(page.getByRole('button', { name: 'Publish', exact: true })).toBeDisabled();
+  await page.getByLabel('Page heading', { exact: true }).fill('A draft to restore');
+  await page.getByRole('button', { name: 'Save draft', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('Draft saved to the server');
+  await page.getByRole('button', { name: 'Revision history', exact: true }).click();
+  await page.getByRole('button', { name: 'Restore as draft', exact: true }).first().click();
+  await page.getByRole('button', { name: 'Continue', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('Nothing was published');
+  await expect(page.getByLabel('Page heading', { exact: true })).toHaveValue(before);
+  expect(await page.evaluate(() => window.adminFixture.getRecords()[0].published.heading)).toBe(before);
+  expect(await page.evaluate(() => window.adminFixture.calls.filter(call => call[0] === 'publish'))).toEqual([]);
+});
+
+test('sponsor stays off until saved and explicitly published, then unpublishes without removing draft', async ({ page }) => {
+  await page.goto(fixture);
+  await page.getByRole('button', { name: /^Sponsors/ }).click();
+  await page.getByRole('button', { name: '+ Add sponsor', exact: true }).click();
+  await expect(page.getByLabel('Enable when published', { exact: true })).not.toBeChecked();
+  await page.getByLabel('Sponsor name', { exact: true }).fill('Browser test sponsor');
+  await page.getByLabel('Destination link', { exact: true }).fill('https://example.com/');
+  await page.getByRole('button', { name: 'Save draft', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('Draft saved');
+  await page.getByLabel('Alternative text', { exact: true }).fill('Sponsor browser test artwork');
+  await page.locator('input[type="file"]').setInputFiles({ name: 'fixture.png', mimeType: 'image/png', buffer: Buffer.from('mock-file') });
+  await expect(page.getByRole('status')).toContainText('Image uploaded privately');
+  await page.getByLabel('Enable when published', { exact: true }).check();
+  await page.getByRole('button', { name: 'Save draft', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('Draft saved');
+  expect(await page.evaluate(() => window.adminFixture.getRecords().find(record => record.type === 'sponsor').published)).toBeNull();
+  await page.getByRole('button', { name: 'Publish', exact: true }).click();
+  await page.keyboard.press('Escape');
+  expect(await page.evaluate(() => window.adminFixture.calls.filter(call => call[0] === 'publish'))).toEqual([]);
+  await page.getByRole('button', { name: 'Publish', exact: true }).click();
+  await page.getByRole('button', { name: 'Continue', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('Published successfully');
+  await page.getByRole('button', { name: 'Unpublish', exact: true }).click();
+  await page.getByRole('button', { name: 'Continue', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('Unpublished successfully');
+  const saved = await page.evaluate(() => window.adminFixture.getRecords().find(record => record.type === 'sponsor'));
+  expect(saved.published).toBeNull();
+  expect(saved.draft.name).toBe('Browser test sponsor');
+});

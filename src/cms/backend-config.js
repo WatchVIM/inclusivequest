@@ -16,9 +16,13 @@ export function imagePathFromSource(source) {
   const path = source.slice('/api/media?path='.length);
   return MANAGED_IMAGE_PATH.test(path) ? path : null;
 }
+export function isStoredImageSource(source) {
+  return ['', '/inclusive-quest-logo.png', '/she-wears-the-pants.svg', '/founder-photo.jpg'].includes(source) || Boolean(imagePathFromSource(source));
+}
 export function detectImageType(bytes) {
   if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'image/jpeg';
   if ([137, 80, 78, 71, 13, 10, 26, 10].every((value, i) => bytes[i] === value)) return 'image/png';
   if (String.fromCharCode(...bytes.slice(0, 4)) === 'RIFF' && String.fromCharCode(...bytes.slice(8, 12)) === 'WEBP') return 'image/webp';
   return null;
 }
+

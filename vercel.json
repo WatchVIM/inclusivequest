@@ -11,11 +11,28 @@
     {
       "source": "/admin/",
       "destination": "/index"
+    },
+    {
+      "source": "/admin/sponsors",
+      "destination": "/index"
+    },
+    {
+      "source": "/admin/sponsors/",
+      "destination": "/index"
     }
   ],
   "headers": [
     {
       "source": "/admin",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    },
+    {
+      "source": "/admin/sponsors/:path*",
       "headers": [
         {
           "key": "X-Robots-Tag",

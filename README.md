@@ -47,4 +47,5 @@ See `CONTENT_EDITING.md` for temporary source-content editing instructions and `
 
 ## Admin review foundation
 
-A same-site `/admin` foundation now supports a clearly labelled, in-memory review workspace on local/Vercel preview builds. Its draft preview uses the actual public website, including admin-managed YouTube metadata, categories/tags and blog templates. Production editing, authentication, uploads, durable saving and publishing stay locked pending the client-owned backend. See [ADMIN_SETUP.md](ADMIN_SETUP.md) for the exact editable scope, review steps, Supabase integration contract, tests and activation checklist. No production CMS has been activated by this change.
+The same-site `/admin` includes an authenticated CMS workspace with editor/publisher roles, server-saved drafts, private uploads, publishing and revision restore when the approved backend is configured. Without backend configuration it falls back to a clearly labelled, in-memory review workspace. Its draft preview uses the actual public website, including YouTube metadata, categories/tags and blog templates. Code completion is not live acceptance or production activation. See [ADMIN_SETUP.md](ADMIN_SETUP.md) for the exact editable scope, review steps, Supabase integration contract, tests and activation checklist. No production CMS has been activated by this change.
+
