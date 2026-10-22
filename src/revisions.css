@@ -222,3 +222,37 @@
 .site-preview .a11y-trigger{position:static}
 .site-preview .a11y-panel{position:absolute;bottom:64px;right:0;max-width:calc(100vw - 50px)}
 @media(max-width:640px){.youtube-consent{grid-template-columns:1fr;padding:20px;gap:16px}.youtube-consent>img{max-height:220px}.youtube-note{padding:14px 20px}.youtube-frame{aspect-ratio:16/10}}
+
+/* Center the complete footer on phones without changing the desktop layout. */
+@media (max-width: 780px) {
+  .site-footer {
+    /* Leave room for the fixed accessibility control below the copyright. */
+    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  }
+  .site-footer .footer-inner {
+    align-items: center;
+    text-align: center;
+  }
+  .site-footer .footer-brand {
+    width: 100%;
+  }
+  .site-footer .logo-mark {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .site-footer .footer-brand .logo-copy {
+    display: block;
+    max-width: 100%;
+  }
+  .site-footer .wordmark {
+    white-space: normal;
+  }
+  .site-footer .footer-links {
+    width: 100%;
+    justify-content: center;
+  }
+  .site-footer .footer-links a {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+}
