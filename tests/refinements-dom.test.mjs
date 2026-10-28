@@ -48,10 +48,21 @@ test('home removes retired tagline, strikes Not Intelligence and keeps interpret
   assert.equal(document.querySelector('.caption-box').textContent, 'Unveiling Access, One Quest at a Time.');
   const interpreter = document.querySelector('.interpreter-card');
   assert.equal(interpreter.textContent.trim(), '');
-  assert.equal(interpreter.querySelector('img').getAttribute('src'), '/inclusive-quest-logo.png');
+  assert.equal(interpreter.querySelector('img').getAttribute('src'), '/interpreter-gold-hands.png');
+  assert.equal(interpreter.querySelector('img').getAttribute('alt'), 'Sign Language Interpretation');
   assert.match(document.querySelector('.footer-tagline').textContent, /^Unveiling Access\. One Quest at a Time\.$/);
   const footer = within(screen.getByRole('navigation', { name: 'Footer links' }));
   for (const button of nav().getAllByRole('button')) assert.ok(footer.getByRole('link', { name: button.textContent, exact: true }));
+});
+
+test('original gold interpretation mark appears at all three placements without replacing IQ branding', async () => {
+  const user = open({ preview: true });
+  const marks = screen.getAllByRole('img', { name: 'Sign Language Interpretation' });
+  assert.equal(marks.length, 2);
+  for (const mark of marks) assert.equal(mark.getAttribute('src'), '/interpreter-gold-hands.png');
+  assert.equal(document.querySelector('.logo-img').getAttribute('src'), '/inclusive-quest-logo.png');
+  await go(user, 'Watch');
+  assert.equal(document.querySelector('.watch-interpreter-mark').getAttribute('src'), '/interpreter-gold-hands.png');
 });
 
 test('dedicated interpreter image is shared across three placements without overwriting homepage artwork', async () => {

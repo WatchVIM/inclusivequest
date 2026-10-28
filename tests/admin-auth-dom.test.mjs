@@ -82,6 +82,41 @@ async function open(options) {
 async function section(user, name) { await user.click(within(screen.getByRole('navigation', { name: 'Content sections' })).getByRole('button', { name: new RegExp('^' + name + ' ') })); }
 
 // All requests in this file use an injected in-memory repository. No live Auth, mail or database calls.
+
+test('blog photo replacement stays private through save and reload, opens the article preview and publishes only after confirmation', async () => {
+  const post = createDraft('post', 'post-photo-test');
+  Object.assign(post.draft, { title: 'My access story', slug: 'my-access-story', excerpt: 'A community story about access.', imageSrc: '/old-photo.png', imageAlt: 'Original portrait' });
+  post.published = copy(post.draft);
+  const { user, state } = await open({ documents: [...createSeedDocuments(), post] });
+  await section(user, 'Blog posts');
+  fireEvent.change(screen.getByLabelText('Alternative text'), { target: { value: 'Replacement portrait' } });
+  await act(async () => fireEvent.change(document.querySelector('input[type="file"]'), { target: { files: [new File(['fixture'], 'portrait.png', { type: 'image/png' })] } }));
+  const saved = () => state.records.find(record => record.id === post.id);
+  assert.equal(saved().published.imageSrc, '/old-photo.png');
+  assert.equal(saved().draft.imageSrc, '/old-photo.png');
+  await user.click(screen.getByRole('button', { name: 'Save draft', exact: true }));
+  assert.match(saved().draft.imageSrc, /^\/api\/media\?path=/);
+  assert.equal(saved().published.imageSrc, '/old-photo.png');
+  await user.click(screen.getByRole('button', { name: /Reload/ }));
+  assert.match(screen.getByLabelText('Stored image reference').value, /^\/api\/media\?path=/);
+  await user.click(screen.getByRole('button', { name: 'Preview draft', exact: true }));
+  const preview = screen.getByRole('dialog', { name: 'Draft website preview' });
+  assert.ok(within(preview).getByRole('heading', { name: 'My access story' }));
+  assert.equal(within(preview).getByRole('img', { name: 'Replacement portrait' }).src, 'https://example.test/signed/image.png');
+  await user.click(within(preview).getByRole('button', { name: 'Close Draft website preview' }));
+  await user.click(screen.getByRole('button', { name: 'View published website', exact: true }));
+  const published = screen.getByRole('dialog', { name: 'Published website preview' });
+  assert.equal(within(published).getByRole('img', { name: 'Original portrait' }).getAttribute('src'), '/old-photo.png');
+  await user.click(within(published).getByRole('button', { name: 'Close Published website preview' }));
+  await user.click(screen.getByRole('button', { name: 'Publish', exact: true }));
+  assert.equal(saved().published.imageSrc, '/old-photo.png');
+  await user.click(screen.getByRole('button', { name: 'Keep editing' }));
+  assert.equal(state.calls.filter(call => call[0] === 'publish').length, 0);
+  await user.click(screen.getByRole('button', { name: 'Publish', exact: true }));
+  await user.click(screen.getByRole('button', { name: 'Continue', exact: true }));
+  assert.equal(saved().published.imageSrc, saved().draft.imageSrc);
+  assert.equal(state.calls.filter(call => call[0] === 'publish').length, 1);
+});
 test('configured admin requires sign-in and reports link failures honestly', async () => {
   const { user, state } = await open({ authenticated: false, overrides: { requestSignIn: async () => { throw new Error('Email delivery is unavailable.'); } } });
   assert.equal(screen.queryByRole('button', { name: 'Open review workspace' }), null);

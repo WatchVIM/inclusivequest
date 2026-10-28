@@ -220,7 +220,9 @@ export default function AuthenticatedAdminApp({ repository, deploymentEnvironmen
     run('Could not prepare preview', async current => {
       const documents = await repository.previewDocuments(mode === 'published' ? records.filter(record => record.published) : records, mode);
       const sponsor = selected?.type === 'sponsor' ? (mode === 'published' ? selected.published : selected.draft) : null;
-      if (current()) setPreview({ mode, documents, initialPage: sponsor?.placement === 'episode' ? 'Watch' : 'Home', initialEpisodeId: sponsor?.targeting === 'episode' ? sponsor.episodeId : '' });
+      const post = selected?.type === 'post' ? (mode === 'published' ? selected.published : selected.draft) : null;
+      const initialPage = selected?.type === 'post' ? (post ? `Post:${post.slug}` : 'Blog') : sponsor?.placement === 'episode' ? 'Watch' : 'Home';
+      if (current()) setPreview({ mode, documents, initialPage, initialEpisodeId: sponsor?.targeting === 'episode' ? sponsor.episodeId : '' });
     });
   };
   const confirmPublication = mode => {

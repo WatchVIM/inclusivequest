@@ -44,8 +44,8 @@ function GradientWords({ children }) {
 }
 function InterpreterMark({ className = '' }) {
   const { HOME } = useContent();
-  return <img className={className} src={HOME.interpreterImageSrc || BRAND.logoSrc}
-    alt={HOME.interpreterImageSrc ? HOME.interpreterImageAlt || '' : ''} />;
+  return <img className={className} src={HOME.interpreterImageSrc || '/interpreter-gold-hands.png'}
+    alt={HOME.interpreterImageSrc ? HOME.interpreterImageAlt || '' : 'Sign Language Interpretation'} />;
 }
 function LogoMark({ compact = false }) {
   return <div className={'logo-mark new-brand ' + (compact ? 'compact-brand' : '')}>
@@ -634,7 +634,9 @@ export default function App({ previewMode = false, initialPage = 'Home', initial
   const utteranceRef = useRef(null);
   const hoverTimerRef = useRef(null);
   const previousPageRef = useRef(null);
-  const [activeTab, setActiveTab] = useState(() => previewMode ? (initialPage === 'Watch' ? 'Watch' : 'Home') : currentPage());
+  const [activeTab, setActiveTab] = useState(() => previewMode
+    ? (['Watch', 'Blog'].includes(initialPage) || /^Post:[a-z0-9]+(?:-[a-z0-9]+)*$/.test(initialPage) ? initialPage : 'Home')
+    : currentPage());
   const [selectedTitleId, setSelectedTitleId] = useState(initialEpisodeId || TITLES[0]?.id || '');
   const selectedTitle = TITLES.find((item) => item.id === selectedTitleId) || TITLES[0] || null;
   const setSelectedTitle = (item) => setSelectedTitleId(item.id);
