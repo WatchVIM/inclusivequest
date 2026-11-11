@@ -15,7 +15,7 @@ const saved=()=>({...createSeedDocuments()[0],revision:2});
 function mockClient(overrides={}) {
   const calls=[];
   const client={
-    auth:{ getUser:async()=>({data:{user:{id:uid,email:'editor@example.test'}}}),signInWithOtp:async data=>{calls.push(['signin',data]);return {};},signOut:async()=>({}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}})},
+    auth:{ getUser:async()=>({data:{user:{id:uid,email:'editor@example.test'}}}),signInWithPassword:async data=>{calls.push(['signin',data]);return {};},signOut:async()=>({}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}})},
     rpc:async(name,args)=>{calls.push([name,args]);return {data:name==='cms_session'?{role:'publisher'}:{document:saved()}}},
     ...overrides
   };
@@ -35,11 +35,21 @@ test('canonical content strips legacy seed extras and canonicalizes YouTube URLs
   assert.equal(value.youtubeUrl,'https://www.youtube.com/watch?v=dQw4w9WgXcQ');
   assert.ok(!('id'in value));assert.ok(!('poster'in value));
 });
-test('sign in is invite-only with exact same-origin admin callback',async()=>{
-  const {client,calls}=mockClient();const repo=createAdminRepository({client,origin:'https://preview.example.test'});
-  await repo.requestSignIn('editor@example.test');
-  assert.deepEqual(calls[0],['signin',{email:'editor@example.test',options:{shouldCreateUser:false,emailRedirectTo:'https://preview.example.test/admin'}}]);
-  await assert.rejects(()=>repo.requestSignIn('bad'),/email/);
+test('password sign-in verifies live membership and preserves the password exactly',async()=>{
+  const {client,calls}=mockClient();const repo=createAdminRepository({client});
+  assert.equal((await repo.requestSignIn(' editor@example.test ', ' test password ')).role,'publisher');
+  assert.deepEqual(calls[0],['signin',{email:'editor@example.test',password:' test password '}]);
+  await assert.rejects(()=>repo.requestSignIn('bad','test'),/Unable to sign in/);
+});
+test('password failures and nonmembers receive generic errors; nonmembers are signed out',async()=>{
+  for (const kind of ['auth','nonmember','network']) {
+    const {client}=mockClient();let signedOut=false;
+    client.auth.signInWithPassword=async()=>{if(kind==='network')throw new Error('private details');return kind==='auth'?{error:{message:'private details'}}:{};};
+    client.auth.signOut=async()=>{signedOut=true;return {};};
+    client.rpc=async()=>({data:null});
+    await assert.rejects(()=>createAdminRepository({client}).requestSignIn('outsider@example.test','fixture-only'),/^Error: Unable to sign in/);
+    assert.equal(signedOut,kind==='nonmember');
+  }
 });
 test('membership is verified live before mutation and cannot be supplied by the caller',async()=>{
   let writes=0;
@@ -102,16 +112,18 @@ test('public media endpoint relies on anonymous download policy, never caller au
 test('invitation callback uses SDK implicit mode while ordinary sign-in stays PKCE', async()=>{
   const { authFlowForHash } = await import('../src/cms/admin-repository.js');
   assert.equal(authFlowForHash('#type=invite&access_token=fixture&refresh_token=fixture'), 'implicit');
+  assert.equal(authFlowForHash('#type=recovery&access_token=fixture&refresh_token=fixture'), 'implicit');
   for (const hash of ['', '#type=magiclink&access_token=fixture&refresh_token=fixture', '#type=invite', '#code=fixture']) assert.equal(authFlowForHash(hash),'pkce');
   const {client}=mockClient();let options;
   createAdminRepository({config:readBackendConfig(env),callbackHash:'#type=invite&access_token=fixture&refresh_token=fixture',create:(url,key,opts)=>{options=opts;return client;}});
   assert.equal(options.auth.flowType,'implicit');assert.equal(options.auth.detectSessionInUrl,true);
 });
-test('invalid callback is surfaced without echoing tokens, and retry can recover',async()=>{
+test('invalid callback fails closed until a fresh password sign-in',async()=>{
   const {client}=mockClient();client.auth.initialize=async()=>({error:{message:'bad fixture callback'}});
   const repo=createAdminRepository({client});
   await assert.rejects(()=>repo.getSession(),{code:'SESSION_EXPIRED'});
-  assert.equal((await repo.getSession()).role,'publisher');
+  await assert.rejects(()=>repo.getSession(),{code:'SESSION_EXPIRED'});
+  assert.equal((await repo.requestSignIn('editor@example.test','fixture-password')).role,'publisher');
 });
 test('published preview omits draft-only records and never persists signed URLs',async()=>{
   const record=saved(); record.draft.imageSrc='/api/media?path='+path;record.draft.imageAlt='Diagram';record.published.imageSrc='/api/media?path='+path;record.published.imageAlt='Diagram';
@@ -132,4 +144,10 @@ test('media accepts at most four million bytes and uploads enforce the same limi
   const create=()=>({storage:{from:()=>({download:async()=>({data:blob})})}});
   const res=response();await mediaHandler({env,create})({method:'GET',query:{path}},res);assert.equal(res.code,200);assert.equal(res.body.length,MAX_IMAGE_BYTES);
   const large=response();await mediaHandler({env,create:()=>({storage:{from:()=>({download:async()=>({data:{size:MAX_IMAGE_BYTES+1}})})}})})({method:'GET',query:{path}},large);assert.equal(large.code,404);
+});
+
+test('password form refuses insecure hosted origin without sending credentials',async()=>{
+ const {client,calls}=mockClient();
+ await assert.rejects(()=>createAdminRepository({client,origin:'http://preview.example.test'}).requestSignIn('editor@example.test','fixture'),/Unable to sign in/);
+ assert.equal(calls.length,0);
 });

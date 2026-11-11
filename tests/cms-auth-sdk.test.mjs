@@ -35,20 +35,21 @@ test('real Supabase SDK accepts invitation callback, clears tokens and rechecks 
   assert.ok(localStorage.getItem('inclusive-quest-cms-auth-v1'));
 });
 
-test('real Supabase SDK creates a PKCE magic-link request with signup disabled',async t=>{
+test('real Supabase SDK sends password grant and keeps Auth failures generic',async t=>{
   const normal=new JSDOM('',{url:'https://preview.example.test/admin'});
   for(const key of ['window','document','localStorage'])globalThis[key]=normal.window[key];
   Object.defineProperty(globalThis,'navigator',{value:normal.window.navigator,configurable:true});
   let sdk;let request;
   const fetch=async(input,options={})=>{
     const url=new URL(String(input));
-    assert.equal(url.pathname,'/auth/v1/otp');request={url,body:JSON.parse(options.body)};
-    return new Response('{}',{status:200,headers:{'content-type':'application/json'}});
+    assert.equal(url.pathname,'/auth/v1/token');request={url,body:JSON.parse(options.body)};
+    return new Response(JSON.stringify({msg:'Invalid login credentials',error_code:'invalid_credentials'}),{status:400,headers:{'content-type':'application/json'}});
   };
-  const repo=createAdminRepository({config:{url:CLIENT_PROJECT_URL,publishableKey:'sb_publishable_'+'f'.repeat(40)},callbackHash:'',origin:window.location.origin,create:(url,key,options)=>{sdk=createClient(url,key,{...options,global:{fetch},auth:{...options.auth,autoRefreshToken:false,storageKey:'iq-pkce-sdk-test'}});return sdk;}});
+  const repo=createAdminRepository({config:{url:CLIENT_PROJECT_URL,publishableKey:'sb_publishable_'+'f'.repeat(40)},callbackHash:'',create:(url,key,options)=>{sdk=createClient(url,key,{...options,global:{fetch},auth:{...options.auth,autoRefreshToken:false,persistSession:false}});return sdk;}});
   t.after(async()=>{await sdk.auth.stopAutoRefresh();normal.window.close();});
-  await repo.requestSignIn('editor@example.test');
-  assert.equal(request.body.email,'editor@example.test');assert.equal(request.body.create_user,false);
-  assert.equal(request.body.code_challenge_method,'s256');assert.ok(request.body.code_challenge.length>=40);
-  assert.equal(request.url.searchParams.get('redirect_to'),'https://preview.example.test/admin');
+  await assert.rejects(()=>repo.requestSignIn('editor@example.test','fixture-password'),/Unable to sign in/);
+  assert.equal(request.body.email,'editor@example.test');
+  assert.equal(request.body.password,'fixture-password');
+  assert.equal(request.url.searchParams.get('grant_type'),'password');
+  assert.equal(request.body.create_user,undefined);
 });

@@ -1,3 +1,4 @@
+import { passwordSetupFeedback } from '../cms/admin-repository.js';
 import { MAX_IMAGE_BYTES } from '../cms/backend-config.js';
 import React, { useEffect, useRef, useState } from 'react';
 import App from '../App.jsx';
@@ -26,6 +27,12 @@ export default function AuthenticatedAdminApp({ repository, deploymentEnvironmen
   const [session, setSession] = useState(null);
   const [member, setMember] = useState(null);
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [setupSaved, setSetupSaved] = useState(false);
+  const setupIdentityRef = useRef(null);
+  const setupSubmittingRef = useRef(false);
   const [authMessage, setAuthMessage] = useState('');
   const [records, setRecords] = useState([]);
   const [newRecord, setNewRecord] = useState(null);
@@ -103,6 +110,7 @@ export default function AuthenticatedAdminApp({ repository, deploymentEnvironmen
     const meta = document.createElement('meta'); meta.name = 'robots'; meta.content = 'noindex, nofollow'; document.head.append(meta);
     const timers = new Set();
     const refresh = async () => {
+      if (setupSubmittingRef.current) return;
       const check = ++sessionCheckRef.current;
       const current = () => mounted.current && check === sessionCheckRef.current;
       try {
@@ -111,8 +119,15 @@ export default function AuthenticatedAdminApp({ repository, deploymentEnvironmen
         if (!nextSession) {
           if (gateRef.current === 'ready') setAuthMessage('Your session ended. Sign in again. Unsaved fields remain only in this tab.');
           operationEpoch.current += 1; setSession(null); setMember(null); setPreview(null); setHistory(null); setPending(null);
+          setupIdentityRef.current = null; setNewPassword(''); setConfirmPassword('');
           changeGate('signin'); return;
         }
+        if (nextSession.requiresPasswordSetup) {
+          if (setupIdentityRef.current !== nextSession.user.id) { setNewPassword(''); setConfirmPassword(''); setSetupSaved(false); setAuthMessage(''); }
+          setupIdentityRef.current = nextSession.user.id;
+          clearPrivateState(); setSession(nextSession); changeGate('setup'); return;
+        }
+        setupIdentityRef.current = null; setNewPassword(''); setConfirmPassword('');
         setSession(nextSession);
         if (retainedUserRef.current === nextSession.user.id) {
           setMember({ role: nextSession.role });
@@ -133,13 +148,17 @@ export default function AuthenticatedAdminApp({ repository, deploymentEnvironmen
         if (!current()) return;
         setPreview(null); setHistory(null); setPending(null); setMember(null);
         if (isDenied(error)) { changeGate('denied'); setAuthMessage('This account has no website editor access. Supabase project membership alone does not grant access here. Ask the site owner to approve an editor or publisher role.'); }
-        else if (isExpired(error)) { changeGate('signin'); setAuthMessage('Your sign-in has expired. Request a fresh sign-in link.'); }
+        else if (isExpired(error)) { changeGate('signin'); setAuthMessage('Your sign-in or setup link has expired. Sign in with your password, or ask the site owner for a new secure setup link.'); }
         else { changeGate('error'); setAuthMessage(`Could not load the admin: ${error?.message || 'Check your connection and try again.'}`); }
       }
     };
     refreshRef.current = refresh;
     // Schedule outside the auth callback: calling Auth methods inside it can deadlock the SDK.
-    const unsubscribe = repository.onAuthStateChange(() => {
+    const unsubscribe = repository.onAuthStateChange((event, next) => {
+      if (setupSubmittingRef.current && (event === 'SIGNED_OUT' || (next?.user?.id && next.user.id !== setupIdentityRef.current))) {
+        sessionCheckRef.current += 1; clearPrivateState(); changeGate('signin');
+        setNewPassword(''); setConfirmPassword('');
+      }
       const timer = window.setTimeout(() => { timers.delete(timer); refresh(); }, 0); timers.add(timer);
     });
     refresh();
@@ -171,10 +190,38 @@ export default function AuthenticatedAdminApp({ repository, deploymentEnvironmen
   const requestSignIn = async event => {
     event.preventDefault();
     if (busyRef.current) return;
-    busyRef.current = true; setBusy('Sending sign-in link'); setAuthMessage('');
-    try { await repository.requestSignIn(email.trim()); if (mounted.current) setAuthMessage('If this email is an approved account, a sign-in link is on its way. Open the link in this browser. Check spam if it does not arrive.'); }
-    catch (error) { if (mounted.current) setAuthMessage(`Could not send a sign-in link: ${error?.message || 'Please try again.'}`); }
-    finally { busyRef.current = false; if (mounted.current) setBusy(''); }
+    busyRef.current = true; setBusy('Signing in'); setAuthMessage('');
+    const submittedPassword = password;
+    setPassword('');
+    try {
+      await repository.requestSignIn(email.trim(), submittedPassword);
+      if (mounted.current) refreshRef.current?.();
+    }
+    catch { if (mounted.current) setAuthMessage('Unable to sign in. Check your email and password, or contact the site owner.'); }
+    finally { busyRef.current = false; if (mounted.current) { setPassword(''); setBusy(''); } }
+  };
+  const completePasswordSetup = async event => {
+    event.preventDefault();
+    if (busyRef.current || setupSaved || gateRef.current !== 'setup') return;
+    const feedback = passwordSetupFeedback(newPassword, confirmPassword);
+    if (feedback) { setAuthMessage(feedback); return; }
+    const expectedId = session?.user?.id;
+    const submitted = newPassword, confirmation = confirmPassword;
+    busyRef.current = true; setupSubmittingRef.current = true; setBusy('Saving password');
+    setAuthMessage(''); setNewPassword(''); setConfirmPassword('');
+    try {
+      await repository.completePasswordSetup(submitted, confirmation, expectedId);
+      if (!mounted.current) return;
+      clearPrivateState(); setupIdentityRef.current = null; changeGate('signin');
+      setAuthMessage('Your password is saved. Sign in with your email and new password.');
+    } catch (error) {
+      if (!mounted.current) return;
+      if (error?.code === 'PASSWORD_SAVED_SIGNOUT_REQUIRED') setSetupSaved(true);
+      setAuthMessage(error?.code === 'PASSWORD_SAVED_SIGNOUT_REQUIRED' ? 'Your password was saved, but sign-out could not be confirmed. Use Sign out before signing in again.' : 'Could not confirm your password setup. Try again, or ask the site owner for a new secure link.');
+    } finally {
+      busyRef.current = false; setupSubmittingRef.current = false;
+      if (mounted.current) { setNewPassword(''); setConfirmPassword(''); setBusy(''); }
+    }
   };
   const signOut = async () => {
     if (busyRef.current) return;
@@ -266,14 +313,23 @@ export default function AuthenticatedAdminApp({ repository, deploymentEnvironmen
     <a className="admin-back" href="/">← Back to Inclusive Quest</a>
     <section className="admin-gate-card">
       <img src="/inclusive-quest-logo.png" alt="Inclusive Quest" width="88" height="88" />
-      <p className="admin-kicker">Content admin</p><div className="admin-notice admin-environment-notice"><strong>{environmentTitle}</strong><p>{environmentDescription}</p></div><h1>{gate === 'denied' ? 'Editor access required' : 'Your stories. More access.'}</h1>
+      <p className="admin-kicker">Content admin</p><div className="admin-notice admin-environment-notice"><strong>{environmentTitle}</strong><p>{environmentDescription}</p></div><h1>{gate === 'setup' ? 'Set your password' : gate === 'denied' ? 'Editor access required' : 'Your stories. More access.'}</h1>
       {(gate === 'checking' || gate === 'loading') ? <p role="status">{gate === 'checking' ? 'Checking your sign-in…' : 'Loading your saved content…'}</p> : <>
         <p>Approved editors can save drafts and upload images. Publishers can also make content live.</p>
         {authMessage && <p className="admin-notice" role="status">{authMessage}</p>}
         {gate === 'signin' && <form className="admin-signin" onSubmit={requestSignIn}>
-          <label htmlFor="admin-email">Email address</label><input id="admin-email" type="email" autoComplete="email" required value={email} disabled={Boolean(busy)} onChange={event => setEmail(event.target.value)} />
-          <button className="admin-primary" disabled={Boolean(busy)}>{busy || 'Email me a sign-in link'}</button>
-          <p className="admin-muted">Use the email approved by the site owner. This form does not create an editor account.</p>
+          <label htmlFor="admin-email">Email address</label><input id="admin-email" type="email" autoComplete="username" required value={email} disabled={Boolean(busy)} onChange={event => setEmail(event.target.value)} />
+          <label htmlFor="admin-password">Password</label><input id="admin-password" type="password" autoComplete="current-password" required value={password} disabled={Boolean(busy)} onChange={event => setPassword(event.target.value)} />
+          <button className="admin-primary" disabled={Boolean(busy)}>{busy || 'Sign in'}</button>
+          <p className="admin-muted">Use your full approved email address as your username. For password setup or recovery, contact the site owner for a secure reset. Never send your password in chat or email.</p>
+        </form>}
+        {gate === 'setup' && <form className="admin-signin" onSubmit={completePasswordSetup}>
+          <p>Set a password for {session?.user?.email}. You will sign in again afterward. Never send your password in chat or email.</p>
+          <label htmlFor="setup-password">New password</label><input id="setup-password" type="password" autoComplete="new-password" minLength={12} maxLength={128} required value={newPassword} disabled={Boolean(busy) || setupSaved} aria-describedby="password-guidance" onChange={event => setNewPassword(event.target.value)} />
+          <p id="password-guidance" className="admin-muted">{newPassword.length >= 16 ? 'Longer password length selected. Use a unique password or passphrase you do not use elsewhere.' : 'Use at least 12 characters. A long, unique passphrase is recommended.'}</p>
+          <label htmlFor="confirm-password">Confirm new password</label><input id="confirm-password" type="password" autoComplete="new-password" minLength={12} maxLength={128} required value={confirmPassword} disabled={Boolean(busy) || setupSaved} onChange={event => setConfirmPassword(event.target.value)} />
+          <button className="admin-primary" disabled={Boolean(busy) || setupSaved}>{busy || 'Save password and sign out'}</button>
+          <button type="button" disabled={Boolean(busy)} onClick={signOut}>Sign out</button>
         </form>}
         {gate === 'error' && <button onClick={() => refreshRef.current?.()} disabled={Boolean(busy)}>Retry loading admin</button>}
         {(gate === 'denied' || gate === 'error') && <button onClick={signOut} disabled={Boolean(busy)}>{busy || 'Sign out'}</button>}

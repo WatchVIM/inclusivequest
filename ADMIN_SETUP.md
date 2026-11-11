@@ -1,3 +1,5 @@
+> Password login update: see PASSWORD_SETUP.md for the current login and secure setup flow. Magic-link instructions below are historical. The two-email CMS authorization rule is applied; preview deployment and real-account acceptance must be verified separately.
+
 # Inclusive Quest admin setup
 
 ## Status: preview integration, not a production handover

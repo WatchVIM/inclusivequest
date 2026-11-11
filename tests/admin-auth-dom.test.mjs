@@ -25,15 +25,16 @@ const copy = value => JSON.parse(JSON.stringify(value));
 const failure = (code, message) => Object.assign(new Error(message), { code });
 const defer = () => { let resolve, reject; const promise = new Promise((yes, no) => { resolve = yes; reject = no; }); return { promise, resolve, reject }; };
 
-function fixture({ role = 'publisher', authenticated = true, overrides = {}, documents } = {}) {
+function fixture({ role = 'publisher', authenticated = true, passwordSetup = false, overrides = {}, documents } = {}) {
   let callback;
-  const state = { session: authenticated ? { user: { id: 'editor-one', email: 'editor@example.test' }, role } : null, records: documents ? copy(documents) : createSeedDocuments(), calls: [], revisions: [] };
+  const state = { session: authenticated ? { user: { id: 'editor-one', email: 'editor@example.test' }, role, ...(passwordSetup ? { requiresPasswordSetup: true } : {}) } : null, records: documents ? copy(documents) : createSeedDocuments(), calls: [], revisions: [] };
   const repository = {
     configured: true,
     initialize: async () => { state.calls.push(['initialize']); state.records = createSeedDocuments(); return copy(state.records); },
     getSession: async () => state.session,
     onAuthStateChange: next => { callback = next; return () => { callback = null; }; },
-    requestSignIn: async email => { state.calls.push(['signIn', email]); },
+    requestSignIn: async (email, password) => { state.calls.push(['signIn', email, password]); },
+    completePasswordSetup: async () => { state.calls.push(['setup']); state.session = null; callback?.('SIGNED_OUT'); return { requiresFreshSignIn: true }; },
     signOut: async () => { state.calls.push(['signOut']); state.session = null; callback?.('SIGNED_OUT'); },
     loadWorkspace: async () => { state.calls.push(['load']); return { member: { role: state.session.role }, documents: copy(state.records) }; },
     saveDraft: async (record, expected) => {
@@ -69,14 +70,15 @@ function fixture({ role = 'publisher', authenticated = true, overrides = {}, doc
     },
     ...overrides
   };
-  return { repository, state, emit: async next => { state.session = next; await act(async () => { callback?.('TEST_EVENT'); await new Promise(resolve => setTimeout(resolve, 5)); }); } };
+  return { repository, state, emit: async next => { state.session = next; await act(async () => { callback?.('TEST_EVENT', next); await new Promise(resolve => setTimeout(resolve, 5)); }); } };
 }
 async function open(options) {
   const setup = fixture(options);
   render(React.createElement(AdminApp, { repository: setup.repository }));
   const user = userEvent.setup({ document: dom.window.document });
-  if (setup.state.session) await screen.findByRole('button', { name: 'Save draft', exact: true });
-  else await screen.findByRole('button', { name: 'Email me a sign-in link' });
+  if (setup.state.session?.requiresPasswordSetup) await screen.findByRole('heading', { name: 'Set your password' });
+  else if (setup.state.session) await screen.findByRole('button', { name: 'Save draft', exact: true });
+  else await screen.findByRole('button', { name: 'Sign in' });
   return { ...setup, user };
 }
 async function section(user, name) { await user.click(within(screen.getByRole('navigation', { name: 'Content sections' })).getByRole('button', { name: new RegExp('^' + name + ' ') })); }
@@ -117,12 +119,13 @@ test('blog photo replacement stays private through save and reload, opens the ar
   assert.equal(saved().published.imageSrc, saved().draft.imageSrc);
   assert.equal(state.calls.filter(call => call[0] === 'publish').length, 1);
 });
-test('configured admin requires sign-in and reports link failures honestly', async () => {
+test('configured admin requires sign-in and reports password failures generically', async () => {
   const { user, state } = await open({ authenticated: false, overrides: { requestSignIn: async () => { throw new Error('Email delivery is unavailable.'); } } });
   assert.equal(screen.queryByRole('button', { name: 'Open review workspace' }), null);
   fireEvent.change(screen.getByLabelText('Email address'), { target: { value: 'editor@example.test' } });
-  await user.click(screen.getByRole('button', { name: 'Email me a sign-in link' }));
-  assert.match(screen.getByRole('status').textContent, /Could not send.*Email delivery is unavailable/);
+  fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'fixture-password' } });
+  await user.click(screen.getByRole('button', { name: 'Sign in' }));
+  assert.match(screen.getByRole('status').textContent, /Unable to sign in/);
   assert.doesNotMatch(screen.getByRole('status').textContent, /on its way/);
   assert.equal(state.calls.length, 0);
 });
@@ -130,9 +133,12 @@ test('configured admin requires sign-in and reports link failures honestly', asy
 test('sign-in sends only the provided address and never opens a review workspace', async () => {
   const { user, state } = await open({ authenticated: false });
   fireEvent.change(screen.getByLabelText('Email address'), { target: { value: 'editor@example.test' } });
-  await user.click(screen.getByRole('button', { name: 'Email me a sign-in link' }));
-  assert.deepEqual(state.calls, [['signIn', 'editor@example.test']]);
-  assert.match(screen.getByRole('status').textContent, /If this email is an approved account/);
+  fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'fixture-password' } });
+  await user.click(screen.getByRole('button', { name: 'Sign in' }));
+  assert.deepEqual(state.calls, [['signIn', 'editor@example.test', 'fixture-password']]);
+  assert.equal(screen.getByLabelText('Password').value, '');
+  assert.equal(screen.getByLabelText('Email address').autocomplete, 'username');
+  assert.equal(screen.getByLabelText('Password').autocomplete, 'current-password');
   assert.equal(screen.queryByLabelText('Page heading'), null);
 });
 
@@ -281,7 +287,7 @@ test('sign-out requires unsaved discard confirmation and clears private state af
   assert.equal(state.calls.some(call => call[0] === 'signOut'), false);
   await user.click(screen.getByRole('button', { name: 'Sign out', exact: true }));
   await user.click(screen.getByRole('button', { name: 'Continue', exact: true }));
-  await screen.findByRole('button', { name: 'Email me a sign-in link' });
+  await screen.findByRole('button', { name: 'Sign in' });
   await emit(session);
   assert.equal(screen.getByLabelText('Page heading').value, 'Accessible Podcasts.');
 });
@@ -397,7 +403,7 @@ test('late save results cannot restore a private workspace after session loss', 
   await user.click(screen.getByRole('button', { name: 'Save draft', exact: true }));
   await emit(null);
   await act(async () => held.resolve());
-  assert.ok(screen.getByRole('button', { name: 'Email me a sign-in link' }));
+  assert.ok(screen.getByRole('button', { name: 'Sign in' }));
   assert.equal(screen.queryByLabelText('Page heading'), null);
   assert.doesNotMatch(screen.getByRole('status').textContent, /Draft saved/);
 });
@@ -536,4 +542,63 @@ test('sponsor history restores only a private draft and leaves its published adv
   assert.equal(screen.getByLabelText('Enable when published').checked, false);
   assert.equal(state.records.find(item => item.id === sponsor.id).published.name, 'Published partner');
   assert.equal(state.calls.some(call => call[0] === 'publish'), false);
+});
+
+test('setup session renders password completion before any private workspace load and requires fresh login',async()=>{
+ const {user,state}=await open({passwordSetup:true});
+ assert.equal(state.calls.some(call=>call[0]==='load'),false);
+ assert.equal(screen.queryByLabelText('Page heading'),null);
+ assert.equal(screen.getByLabelText('New password').autocomplete,'new-password');
+ fireEvent.change(screen.getByLabelText('New password'),{target:{value:'fictional setup passphrase'}});
+ fireEvent.change(screen.getByLabelText('Confirm new password'),{target:{value:'different passphrase'}});
+ await user.click(screen.getByRole('button',{name:'Save password and sign out'}));
+ assert.match(screen.getByRole('status').textContent,/must match/);assert.equal(state.calls.length,0);
+ fireEvent.change(screen.getByLabelText('Confirm new password'),{target:{value:'fictional setup passphrase'}});
+ await user.click(screen.getByRole('button',{name:'Save password and sign out'}));
+ assert.ok(screen.getByRole('button',{name:'Sign in'}));
+ assert.match(screen.getByRole('status').textContent,/password is saved/);
+ assert.equal(state.calls.filter(call=>call[0]==='setup').length,1);
+ assert.equal(screen.queryByLabelText('New password'),null);assert.equal(screen.queryByLabelText('Page heading'),null);
+});
+test('setup repeated clicks stay single-flight and provider errors stay generic with fields cleared',async()=>{
+ const pending=defer();let submissions=0;
+ const {user}=await open({passwordSetup:true,overrides:{completePasswordSetup:()=>{submissions++;return pending.promise;}}});
+ fireEvent.change(screen.getByLabelText('New password'),{target:{value:'fictional setup passphrase'}});
+ fireEvent.change(screen.getByLabelText('Confirm new password'),{target:{value:'fictional setup passphrase'}});
+ await user.dblClick(screen.getByRole('button',{name:'Save password and sign out'}));
+ assert.equal(submissions,1);assert.equal(screen.getByLabelText('New password').value,'');
+ await act(async()=>pending.reject(new Error('private provider detail')));
+ assert.match(screen.getByRole('status').textContent,/Could not confirm/);
+ assert.doesNotMatch(screen.getByRole('status').textContent,/private provider/);
+ assert.equal(screen.getByLabelText('Confirm new password').value,'');
+});
+test('password saved but logout failed is explicit and never opens workspace',async()=>{
+ const {user,state}=await open({passwordSetup:true,overrides:{completePasswordSetup:async()=>{throw failure('PASSWORD_SAVED_SIGNOUT_REQUIRED','provider detail');}}});
+ for(const name of ['New password','Confirm new password'])fireEvent.change(screen.getByLabelText(name),{target:{value:'fictional setup passphrase'}});
+ await user.click(screen.getByRole('button',{name:'Save password and sign out'}));
+ assert.match(screen.getByRole('status').textContent,/password was saved.*sign-out could not be confirmed/);
+ assert.equal(state.calls.some(call=>call[0]==='load'),false);
+ await user.click(screen.getByRole('button',{name:'Sign out',exact:true}));
+ assert.ok(screen.getByRole('button',{name:'Sign in'}));
+});
+test('setup fields clear when identity changes or the session disappears',async()=>{
+ const {emit,state}=await open({passwordSetup:true});
+ fireEvent.change(screen.getByLabelText('New password'),{target:{value:'fictional setup passphrase'}});
+ await emit({...state.session,user:{id:'another-user',email:'another@example.test'}});
+ assert.equal(screen.getByLabelText('New password').value,'');
+ await emit(null);assert.ok(screen.getByRole('button',{name:'Sign in'}));
+ assert.equal(screen.queryByLabelText('New password'),null);
+ assert.equal(screen.queryByLabelText('Page heading'),null);
+});
+test('recovery event wins over an earlier pending ordinary-session check before workspace opens',async()=>{
+ const initial=defer();let reads=0;
+ const setup=fixture({overrides:{getSession:async()=>++reads===1?initial.promise:setup.state.session}});
+ const ordinary=copy(setup.state.session);
+ render(React.createElement(AdminApp,{repository:setup.repository}));
+ await setup.emit({...ordinary,requiresPasswordSetup:true});
+ await screen.findByRole('heading',{name:'Set your password'});
+ await act(async()=>initial.resolve(ordinary));
+ assert.ok(screen.getByRole('heading',{name:'Set your password'}));
+ assert.equal(setup.state.calls.some(call=>call[0]==='load'),false);
+ assert.equal(screen.queryByLabelText('Page heading'),null);
 });
