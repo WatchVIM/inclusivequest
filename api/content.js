@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { readBackendConfig, MAX_PUBLIC_SNAPSHOT_BYTES } from '../src/cms/backend-config.js';
+import { readPublicBackendConfig, MAX_PUBLIC_SNAPSHOT_BYTES } from '../src/cms/backend-config.js';
 import { parsePublicSnapshot } from '../src/cms/public-reader.js';
 
 export function contentHandler({ env = process.env, create = createClient } = {}) {
@@ -10,7 +10,7 @@ export function contentHandler({ env = process.env, create = createClient } = {}
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       res.setHeader('Allow', 'GET, HEAD'); return res.status(405).json({ error: 'Method not allowed.' });
     }
-    const config = readBackendConfig(env);
+    const config = readPublicBackendConfig(env);
     if (!config) return res.status(503).json({ error: 'Content service is not configured.' });
     try {
       // Deliberately anonymous even if caller sends staff cookies/JWTs.

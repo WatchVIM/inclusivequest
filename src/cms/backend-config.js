@@ -7,6 +7,11 @@ export function readBackendConfig(env = {}) {
   if (typeof key !== 'string' || !/^sb_publishable_[A-Za-z0-9_-]{20,200}$/.test(key)) return null;
   return { url: CLIENT_PROJECT_URL, publishableKey: key };
 }
+// Admin Auth and private drafts can use the CMS before the website is ready to read it.
+export function readPublicBackendConfig(env = {}) {
+  return env.CMS_PUBLIC_READS_ENABLED === 'true' ? readBackendConfig(env) : null;
+}
+export const PUBLIC_CMS_READS_AT_BUILD = typeof __CMS_PUBLIC_READS_ENABLED__ !== 'undefined' && __CMS_PUBLIC_READS_ENABLED__ === true;
 export const MAX_PUBLIC_SNAPSHOT_BYTES = 3_500_000;
 export const IMAGE_BUCKET = 'cms-images';
 export const MAX_IMAGE_BYTES = 4_000_000;

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { PUBLIC_CMS_READS_AT_BUILD } from './backend-config.js';
 import { buildPublicContent, fetchPublicContent } from './public-reader.js';
 
 const ContentContext = createContext(null);
@@ -10,7 +11,7 @@ export function ContentProvider({ children, previewDocuments }) {
   const previewContent = useMemo(() => isPreview ? buildPublicContent(previewDocuments, { preview: true }) : null,
     [isPreview, previewDocuments]);
   useEffect(() => {
-    if (isPreview || import.meta.env.VITE_CMS_ENABLED !== 'true') return undefined;
+    if (isPreview || !PUBLIC_CMS_READS_AT_BUILD || import.meta.env.VITE_CMS_ENABLED !== 'true') return undefined;
     const controller = new AbortController();
     let active = true;
     const timeout = window.setTimeout(() => controller.abort(), 8000);

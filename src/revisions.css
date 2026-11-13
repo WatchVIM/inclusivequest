@@ -241,6 +241,7 @@
 .footer-tagline{font-size:1.1rem;max-width:26ch}
 .footer-links{flex:1 1 500px;display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;min-width:0}
 .footer-links .nav-item{padding:8px 6px;min-height:44px;display:inline-flex;align-items:center;font-size:.9rem;text-decoration:none;line-height:1.4}
+.footer-links .footer-admin{min-width:44px;justify-content:center;padding-inline:14px;border:1px solid currentColor;border-radius:999px;color:var(--text);font-weight:700}
 .footer-links a[aria-current=page]{color:#fff;text-decoration:underline;text-decoration-color:#ffa9d4;text-underline-offset:6px}
 .footer-links>a:not(.nav-item){overflow-wrap:anywhere;max-width:100%}
 .footer-inner .copyright{flex-basis:100%;margin-bottom:0}

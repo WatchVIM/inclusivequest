@@ -837,6 +837,7 @@ export default function App({ previewMode = false, initialPage = 'Home', initial
           <a className="nav-item" aria-current={activeTab === item ? 'page' : undefined} key={item} href={'#/' + SLUGS[item]} onClick={(event) => { event.preventDefault(); navigate(item); }}>{item}</a>)}
         <a href={'mailto:' + BRAND.contactEmail}>{BRAND.contactEmail}</a>
         {SOCIAL_LINKS.map((item) => <a key={item.url} href={item.url} target="_blank" rel="noopener noreferrer">{item.label}</a>)}
+        {!previewMode && activeTab === 'Home' && <a className="nav-item footer-admin" href="/admin">Admin</a>}
       </nav>
       <p className="copyright">© 2026 Inclusive Quest. All rights reserved.</p>
     </div></footer>

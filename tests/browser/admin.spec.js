@@ -23,6 +23,28 @@ test('production admin stays locked and public site preserves current content', 
   await expect(page.getByRole('button',{name:'Start Watching'})).toBeVisible();
 });
 
+test('homepage Admin link is keyboard accessible and opens the same-site CMS', async ({page}) => {
+  await page.goto('http://127.0.0.1:4173/');
+  const footer = page.getByRole('navigation', { name: 'Footer links' });
+  const admin = footer.getByRole('link', { name: 'Admin', exact: true });
+  await expect(admin).toBeVisible();
+  await expect(admin).toHaveAttribute('href', '/admin');
+  await footer.getByRole('link').nth(-2).focus();
+  await page.keyboard.press('Tab');
+  await expect(admin).toBeFocused();
+  await expect(admin).toHaveCSS('outline-style', 'solid');
+  const fits = await admin.evaluate(element => {
+    const rect = element.getBoundingClientRect();
+    return rect.width >= 44 && rect.height >= 44 && rect.left >= 0 && rect.right <= window.innerWidth;
+  });
+  expect(fits).toBe(true);
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL('http://127.0.0.1:4173/admin');
+  await expect(page.getByText('Secure publishing is not connected yet.')).toBeVisible();
+  await page.goBack();
+  await expect(admin).toBeVisible();
+});
+
 test('admin keyboard controls, fail-closed controls and mobile layout', async ({page}) => {
   await openAdmin(page);
   await expect(page.getByRole('button',{name:'Publish (not connected)'})).toBeDisabled();

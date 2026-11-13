@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { readBackendConfig, IMAGE_BUCKET, MANAGED_IMAGE_PATH, MAX_IMAGE_BYTES, detectImageType } from '../src/cms/backend-config.js';
+import { readPublicBackendConfig, IMAGE_BUCKET, MANAGED_IMAGE_PATH, MAX_IMAGE_BYTES, detectImageType } from '../src/cms/backend-config.js';
 
 export function mediaHandler({ env = process.env, create = createClient } = {}) {
   return async (req, res) => {
@@ -11,7 +11,7 @@ export function mediaHandler({ env = process.env, create = createClient } = {}) 
     }
     const path = req.query?.path;
     if (typeof path !== 'string' || !MANAGED_IMAGE_PATH.test(path)) return res.status(400).end();
-    const config = readBackendConfig(env);
+    const config = readPublicBackendConfig(env);
     if (!config) return res.status(503).end();
     try {
       // Anonymous download policies admit ONLY paths in current published content.

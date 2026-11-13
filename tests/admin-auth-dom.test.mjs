@@ -15,7 +15,7 @@ dom.window.HTMLDialogElement.prototype.close = function () { this.removeAttribut
 const React = await import('react');
 const { render, screen, within, fireEvent, cleanup, waitFor, act } = await import('@testing-library/react');
 const userEvent = (await import('@testing-library/user-event')).default;
-const output = await build({ entryPoints: ['src/admin/AdminApp.jsx'], bundle: true, write: false, format: 'esm', platform: 'node', packages: 'external', loader: { '.css': 'empty' }, define: { __ADMIN_PREVIEW_ENABLED__: 'false', 'import.meta.env': '{"VITE_CMS_ENABLED":"false","VITE_VERCEL_ENV":"preview"}' } });
+const output = await build({ entryPoints: ['src/admin/AdminApp.jsx'], bundle: true, write: false, format: 'esm', platform: 'node', packages: 'external', loader: { '.css': 'empty' }, define: { __ADMIN_PREVIEW_ENABLED__: 'false', __CMS_PUBLIC_READS_ENABLED__: 'true', 'import.meta.env': '{"VITE_CMS_ENABLED":"false","VITE_VERCEL_ENV":"preview"}' } });
 const temp = new URL('../.admin-auth-dom-test-bundle.mjs', import.meta.url);
 await writeFile(temp, output.outputFiles[0].text);
 const AdminApp = (await import(temp.href)).default;
@@ -447,6 +447,34 @@ test('production build explicitly labels publishing as a public website change',
   assert.match(banner.textContent, /Production content workspace/);
   assert.match(banner.textContent, /Publishing changes the public website/);
   assert.doesNotMatch(banner.textContent, /Production is not connected/);
+});
+
+test('connected production draft mode permits private save and preview but offers no publication or initialization', async () => {
+  const setup = fixture();
+  render(React.createElement(AdminApp, { repository: setup.repository, deploymentEnvironment: 'production', publicationEnabled: false }));
+  const user = userEvent.setup({ document: dom.window.document });
+  const save = await screen.findByRole('button', { name: 'Save draft', exact: true });
+  assert.match(screen.getByLabelText('Publishing environment').textContent, /Draft testing only/);
+  for (const name of ['Publish', 'Unpublish', 'Import current website content', 'View published website']) {
+    assert.equal(screen.queryByRole('button', { name, exact: true }), null);
+  }
+  fireEvent.change(screen.getByLabelText('Page heading', { exact: true }), { target: { value: 'Private draft heading' } });
+  await user.click(save);
+  assert.match(screen.getByRole('status').textContent, /Draft saved to the server/);
+  await user.click(screen.getByRole('button', { name: 'Preview draft', exact: true }));
+  assert.ok(within(screen.getByRole('dialog')).getByRole('heading', { name: 'Private draft heading' }));
+  await user.click(screen.getByRole('button', { name: 'Close Draft website preview' }));
+  await user.click(screen.getByRole('button', { name: 'View saved CMS snapshot' }));
+  assert.match(screen.getByRole('dialog').textContent, /not the current public website/);
+  const home = setup.state.records.find(record => record.id === 'page-home');
+  assert.equal(home.published.heading, 'Accessible Podcasts.');
+  assert.equal(home.draft.heading, 'Private draft heading');
+  assert.ok(!setup.state.calls.some(([name]) => ['publish', 'unpublish', 'initialize'].includes(name)));
+  cleanup();
+  const empty = fixture({ documents: [] });
+  render(React.createElement(AdminApp, { repository: empty.repository, deploymentEnvironment: 'production', publicationEnabled: false }));
+  await screen.findByText('No content is ready for draft testing');
+  assert.equal(screen.queryByRole('button', { name: 'Import current website content' }), null);
 });
 
 

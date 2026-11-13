@@ -1,8 +1,10 @@
 import { afterEach, test } from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { JSDOM } from 'jsdom';
 import { build } from 'esbuild';
 import { writeFile, unlink } from 'node:fs/promises';
+import { buildPublicContent } from '../src/cms/public-reader.js';
 
 const dom = new JSDOM('<!doctype html><html><head><meta name="description"></head><body></body></html>', { url: 'https://preview.example.test/' });
 for (const key of ['window', 'document', 'HTMLElement', 'HTMLInputElement', 'Node', 'Event', 'KeyboardEvent', 'MutationObserver']) globalThis[key] = dom.window[key];
@@ -13,11 +15,14 @@ dom.window.scrollTo = function () {};
 const React = await import('react');
 const { render, screen, within, fireEvent, cleanup, act } = await import('@testing-library/react');
 const userEvent = (await import('@testing-library/user-event')).default;
-const output = await build({ stdin: { contents: "export { default as App } from './src/App.jsx'; export { ContentProvider } from './src/cms/ContentProvider.jsx'; export { createSeedDocuments } from './src/cms/content-model.js'; export { default as AdminApp } from './src/admin/AdminApp.jsx';", resolveDir: process.cwd(), loader: 'jsx' }, bundle: true, write: false, format: 'esm', platform: 'node', packages: 'external', loader: { '.css': 'empty' }, define: { __ADMIN_PREVIEW_ENABLED__: 'true', 'import.meta.env.VITE_CMS_ENABLED': '"false"' } });
-const temp = new URL('../.refinements-dom-test-bundle.mjs', import.meta.url);
-await writeFile(temp, output.outputFiles[0].text);
-const { App, ContentProvider, createSeedDocuments, AdminApp } = await import(temp.href);
-await unlink(temp);
+async function loadBundle(publicReadsEnabled) {
+  const output = await build({ stdin: { contents: "export { default as App } from './src/App.jsx'; export { ContentProvider } from './src/cms/ContentProvider.jsx'; export { createSeedDocuments } from './src/cms/content-model.js'; export { default as AdminApp } from './src/admin/AdminApp.jsx';", resolveDir: process.cwd(), loader: 'jsx' }, bundle: true, write: false, format: 'esm', platform: 'node', packages: 'external', loader: { '.css': 'empty' }, define: { __ADMIN_PREVIEW_ENABLED__: 'true', __CMS_PUBLIC_READS_ENABLED__: String(publicReadsEnabled), 'import.meta.env.VITE_CMS_ENABLED': '"true"' } });
+  const temp = new URL(`../.refinements-dom-test-bundle-${publicReadsEnabled}.mjs`, import.meta.url);
+  await writeFile(temp, output.outputFiles[0].text);
+  try { return await import(temp.href); }
+  finally { await unlink(temp); }
+}
+const { App, ContentProvider, createSeedDocuments, AdminApp } = await loadBundle(false);
 let spoken = [];
 let cancellations = 0;
 function speech() {
@@ -53,6 +58,56 @@ test('home removes retired tagline, strikes Not Intelligence and keeps interpret
   assert.match(document.querySelector('.footer-tagline').textContent, /^Unveiling Access\. One Quest at a Time\.$/);
   const footer = within(screen.getByRole('navigation', { name: 'Footer links' }));
   for (const button of nav().getAllByRole('button')) assert.ok(footer.getByRole('link', { name: button.textContent, exact: true }));
+});
+
+test('Admin links to the same-site CMS only from the public homepage footer', async () => {
+  const user = open();
+  const footer = within(screen.getByRole('navigation', { name: 'Footer links' }));
+  const admin = footer.getByRole('link', { name: 'Admin', exact: true });
+  assert.equal(admin.getAttribute('href'), '/admin');
+  assert.equal(admin.getAttribute('target'), null);
+  await go(user, 'About');
+  assert.equal(footer.queryByRole('link', { name: 'Admin', exact: true }), null);
+  cleanup();
+  open({ preview: true });
+  assert.equal(screen.queryByRole('link', { name: 'Admin', exact: true }), null);
+});
+
+test('draft-only public rendering preserves the full reviewed baseline and never asks for a conflicting CMS snapshot', async () => {
+  const fingerprint = createHash('sha256').update(JSON.stringify(buildPublicContent())).digest('hex');
+  assert.equal(fingerprint, 'f91f3e091237652ef0ae0e06f111c9ed227fecb4feef24cdcec9c47c414fc5b4',
+    'the bundled public snapshot matches the f66925ad release source');
+  const documents = createSeedDocuments().map(({ id, type, published }) => ({ id, type, published }));
+  documents.find(record => record.id === 'page-home').published.subtitle = 'CMS-only subtitle';
+  const original = documents.find(record => record.type === 'testimonial');
+  documents.push({ id: 'extra-testimonial', type: 'testimonial', published: { ...original.published, name: 'CMS-only testimonial' } });
+  delete documents.find(record => record.type === 'episode').published.comingSoon;
+  const before = globalThis.fetch;
+  const requests = [];
+  globalThis.fetch = async path => {
+    requests.push(path);
+    return { ok: true, json: async () => ({ schemaVersion: 1, documents }) };
+  };
+  try {
+    render(React.createElement(ContentProvider, null, React.createElement(App)));
+    const user = userEvent.setup({ document: dom.window.document });
+    assert.equal(document.querySelector('.hero-subtitle').textContent, '');
+    assert.equal(document.querySelectorAll('.testimonial-grid blockquote').length, 2);
+    assert.equal(document.querySelector('.interpreter-card img').getAttribute('src'), '/interpreter-gold-hands.png');
+    await go(user, 'Watch');
+    assert.equal(screen.getByRole('button', { name: 'Coming soon', exact: true }).disabled, true);
+    assert.equal(document.querySelector('.watch-unavailable img').getAttribute('src'), '/she-wears-the-pants.svg');
+    assert.deepEqual(requests, []);
+    cleanup();
+    window.history.replaceState(null, '', '/');
+    const enabled = await loadBundle(true);
+    render(React.createElement(enabled.ContentProvider, null, React.createElement(enabled.App)));
+    await screen.findByText('CMS-only subtitle');
+    assert.equal(document.querySelectorAll('.testimonial-grid blockquote').length, 3);
+    await go(user, 'Watch');
+    assert.equal(screen.queryByRole('button', { name: 'Coming soon', exact: true }), null);
+    assert.deepEqual(requests, ['/api/content']);
+  } finally { globalThis.fetch = before; }
 });
 
 test('original gold interpretation mark appears at all three placements without replacing IQ branding', async () => {

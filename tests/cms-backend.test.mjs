@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createAdminRepository, ConflictError } from '../src/cms/admin-repository.js';
-import { CLIENT_PROJECT_URL, readBackendConfig, imagePathFromSource, detectImageType } from '../src/cms/backend-config.js';
+import { CLIENT_PROJECT_URL, readBackendConfig, readPublicBackendConfig, imagePathFromSource, detectImageType } from '../src/cms/backend-config.js';
 import { canonicalContent } from '../src/cms/canonical-content.js';
 import { createSeedDocuments } from '../src/cms/content-model.js';
 import { contentHandler } from '../api/content.js';
@@ -10,7 +10,7 @@ const uid='11111111-1111-4111-8111-111111111111';
 const op='22222222-2222-4222-8222-222222222222';
 const path=`${uid}/${op}.png`;
 const key='sb_publishable_'+'a'.repeat(40);
-const env={VITE_CMS_ENABLED:'true',VITE_SUPABASE_URL:CLIENT_PROJECT_URL,VITE_SUPABASE_PUBLISHABLE_KEY:key};
+const env={VITE_CMS_ENABLED:'true',CMS_PUBLIC_READS_ENABLED:'true',VITE_SUPABASE_URL:CLIENT_PROJECT_URL,VITE_SUPABASE_PUBLISHABLE_KEY:key};
 const saved=()=>({...createSeedDocuments()[0],revision:2});
 function mockClient(overrides={}) {
   const calls=[];
@@ -28,6 +28,26 @@ function response() {
 test('backend configuration rejects other projects, disabled flags and secret keys',()=>{
   assert.deepEqual(readBackendConfig(env),{url:CLIENT_PROJECT_URL,publishableKey:key});
   for(const bad of [{...env,VITE_CMS_ENABLED:'false'},{...env,VITE_SUPABASE_URL:'https://other.supabase.co'},{...env,VITE_SUPABASE_PUBLISHABLE_KEY:'sb_secret_'+ 'a'.repeat(40)},{...env,VITE_SUPABASE_PUBLISHABLE_KEY:'eyJlegacy-jwt'}]) assert.equal(readBackendConfig(bad),null);
+});
+test('public content and media independently refuse service until an explicit, valid public release',async()=>{
+  const { CMS_PUBLIC_READS_ENABLED, ...adminOnly } = env;
+  assert.deepEqual(readBackendConfig(adminOnly),{url:CLIENT_PROJECT_URL,publishableKey:key});
+  assert.deepEqual(readPublicBackendConfig(env),readBackendConfig(env));
+  const create = () => assert.fail('closed public routes must not contact Supabase');
+  for(const draftConfig of [adminOnly,{...env,CMS_PUBLIC_READS_ENABLED:'false'},{...env,CMS_PUBLIC_READS_ENABLED:'True'},
+    {...env,CMS_PUBLIC_READS_ENABLED:true},{...env,VITE_CMS_ENABLED:'false'},{...env,VITE_SUPABASE_URL:'https://other.supabase.co'},
+    {...env,VITE_SUPABASE_PUBLISHABLE_KEY:'sb_secret_'+'a'.repeat(40)}]){
+    assert.equal(readPublicBackendConfig(draftConfig),null);
+    for(const method of ['GET','HEAD']){
+      const cms=response(), media=response();
+      await contentHandler({env:draftConfig,create})({method},cms);
+      await mediaHandler({env:draftConfig,create})({method,query:{path}},media);
+      assert.equal(cms.code,503);
+      assert.equal(media.code,503);
+      assert.equal(cms.headers['Cache-Control'],'no-store');
+      assert.equal(media.headers['Cache-Control'],'no-store');
+    }
+  }
 });
 test('canonical content strips legacy seed extras and canonicalizes YouTube URLs',()=>{
   const seed=createSeedDocuments().find(x=>x.type==='episode');
