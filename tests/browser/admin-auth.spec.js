@@ -33,7 +33,7 @@ test('conflict and expired session preserve private unsaved fields without displ
   await expect(page.getByRole('status')).toContainText('Someone changed this content');
   await expect(page.getByLabel('Page heading', { exact: true })).toHaveValue('My unsaved browser work');
   await page.evaluate(() => window.adminFixture.expire());
-  await expect(page.getByRole('button', { name: 'Email me a sign-in link' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Sign in' })).toBeVisible();
   await expect(page.getByLabel('Page heading', { exact: true })).toHaveCount(0);
   await page.evaluate(() => window.adminFixture.signIn());
   await expect(page.getByLabel('Page heading', { exact: true })).toHaveValue('My unsaved browser work');
@@ -55,7 +55,7 @@ test('editor publishing is disabled and sign-out confirmation can be cancelled',
   await expect(page.getByLabel('Page heading', { exact: true })).toHaveValue('Unsaved editor fields');
   await page.getByRole('button', { name: 'Sign out', exact: true }).click();
   await page.getByRole('button', { name: 'Continue', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Email me a sign-in link' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Sign in' })).toBeVisible();
   await expect(page.getByLabel('Page heading', { exact: true })).toHaveCount(0);
 });
 
@@ -107,4 +107,37 @@ test('sponsor stays off until saved and explicitly published, then unpublishes w
   const saved = await page.evaluate(() => window.adminFixture.getRecords().find(record => record.type === 'sponsor'));
   expect(saved.published).toBeNull();
   expect(saved.draft.name).toBe('Browser test sponsor');
+});
+
+test('password form signs in and clears failed credentials without leaking errors', async ({ page }) => {
+  await page.goto(fixture + '?signed-out&login-failure');
+  await expect(page.getByLabel('Email address')).toHaveAttribute('autocomplete', 'username');
+  await expect(page.getByLabel('Password', { exact: true })).toHaveAttribute('autocomplete', 'current-password');
+  await page.getByLabel('Email address').fill('abawn@watchvim.us');
+  await page.getByLabel('Password', { exact: true }).fill('fixture-password');
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('Unable to sign in');
+  await expect(page.getByRole('status')).not.toContainText('Private provider details');
+  await expect(page.getByLabel('Password', { exact: true })).toHaveValue('');
+  await expect(page.getByLabel('Page heading', { exact: true })).toHaveCount(0);
+  await page.goto(fixture + '?signed-out');
+  await page.getByLabel('Email address').fill('abawn@watchvim.us');
+  await page.getByLabel('Password', { exact: true }).fill('fixture-password');
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await expect(page.getByLabel('Page heading', { exact: true })).toBeVisible();
+  await expect(page.getByLabel('Password', { exact: true })).toHaveCount(0);
+});
+
+test('recovery setup never loads a private workspace and finishes at password login', async ({ page }) => {
+  await page.goto(fixture + '?password-setup');
+  await expect(page.getByRole('heading', { name: 'Set your password' })).toBeVisible();
+  await expect(page.getByLabel('Page heading', { exact: true })).toHaveCount(0);
+  await expect(page.getByLabel('New password', { exact: true })).toHaveAttribute('autocomplete', 'new-password');
+  await page.getByLabel('New password', { exact: true }).fill('fictional browser passphrase');
+  await page.getByLabel('Confirm new password', { exact: true }).fill('fictional browser passphrase');
+  await page.getByRole('button', { name: 'Save password and sign out' }).click();
+  await expect(page.getByRole('status')).toContainText('password is saved');
+  await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeVisible();
+  await expect(page.getByLabel('New password', { exact: true })).toHaveCount(0);
+  expect(await page.evaluate(() => window.adminFixture.calls.filter(call => call[0] === 'setup').length)).toBe(1);
 });

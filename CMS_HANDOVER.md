@@ -1,3 +1,5 @@
+> Password login update: see PASSWORD_SETUP.md for the current login and secure setup flow. Magic-link instructions below are historical. The two-email CMS authorization rule is applied; preview deployment and real-account acceptance must be verified separately.
+
 # Inclusive Quest — CMS activation and captioned handover
 
 **Status (18 October 2026): Preview integration in progress; production not activated.** The React/Vite production site is connected to GitHub and Vercel. A client-facing CMS is not currently configured, and the founder has not been issued a CMS login or a captioned tutorial recording. Do not tell the client that independent editing has been enabled until each acceptance check below passes.

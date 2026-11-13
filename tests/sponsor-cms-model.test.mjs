@@ -75,7 +75,7 @@ test('public snapshot strips disabled/unresolved/unpublished/orphaned sponsors a
   assert.throws(() => parsePublicSnapshot({ schemaVersion: 1, documents: [record('leak', sponsor())] }), /Invalid public/);
 });
 test('anonymous content endpoint cannot serialize off sponsor content from a misconfigured backend', async () => {
-  const env = { VITE_CMS_ENABLED: 'true', VITE_SUPABASE_URL: CLIENT_PROJECT_URL, VITE_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_' + 'a'.repeat(40) };
+  const env = { VITE_CMS_ENABLED: 'true', CMS_PUBLIC_READS_ENABLED: 'true', VITE_SUPABASE_URL: CLIENT_PROJECT_URL, VITE_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_' + 'a'.repeat(40) };
   const documents = [{ id: 'off', type: 'sponsor', published: sponsor({ enabled: false, name: 'Off campaign secret' }) }, { id: 'on', type: 'sponsor', published: sponsor() }];
   const create = () => ({ rpc: async () => ({ data: { schemaVersion: 1, documents } }) });
   const response = { headers: {}, setHeader(k, v) { this.headers[k] = v; }, status(code) { this.code = code; return this; }, json(body) { this.body = body; return this; } };

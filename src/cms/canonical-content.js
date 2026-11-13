@@ -1,11 +1,11 @@
 import { parseYouTubeUrl, validateDocument, CONTENT_TYPES } from './content-model.js';
 const IMAGE = ['imageSrc', 'imageAlt'];
 const FIELDS = {
-  page: ['title', 'slug', 'heading', 'subtitle', 'body', ...IMAGE],
-  post: ['title', 'slug', 'excerpt', 'body', 'template', ...IMAGE],
-  founder: ['name', 'title', 'bio', 'story', 'homeQuote', ...IMAGE],
+  page: ['title', 'slug', 'heading', 'subtitle', 'body', 'interpreterImageSrc', 'interpreterImageAlt', 'interpreterTitle', 'interpreterSubtitle', ...IMAGE],
+  post: ['title', 'slug', 'excerpt', 'body', 'template', 'date', 'author', ...IMAGE],
+  founder: ['name', 'title', 'heading', 'bio', 'story', 'homeQuote', ...IMAGE],
   testimonial: ['name', 'title', 'quote'],
-  episode: ['title', 'episodeTitle', 'description', 'category', 'youtubeUrl', 'tags', 'mainVideoSrc', 'aslVideoSrc', 'captionsSrc', 'duration', 'badge', 'interpreter', ...IMAGE],
+  episode: ['title', 'episodeTitle', 'hostName', 'comingSoon', 'description', 'category', 'youtubeUrl', 'tags', 'mainVideoSrc', 'aslVideoSrc', 'captionsSrc', 'duration', 'badge', 'interpreter', ...IMAGE],
   category: ['name', 'slug', 'description'],
   sponsor: ['placement', 'enabled', 'name', 'imageSrc', 'imageAlt', 'destinationUrl', 'targeting', 'episodeId']
 };

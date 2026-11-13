@@ -7,7 +7,9 @@ export default defineConfig(({ command }) => ({
   // keeps this off, even if a stray VITE_ flag is configured.
   define: {
     __ADMIN_PREVIEW_ENABLED__: JSON.stringify(command === 'serve' || process.env.VERCEL_ENV === 'preview'),
-    'import.meta.env.VITE_VERCEL_ENV': JSON.stringify(process.env.VERCEL_ENV || '')
+    'import.meta.env.VITE_VERCEL_ENV': JSON.stringify(process.env.VERCEL_ENV || ''),
+    // Mirrors the web-service gate at build time. Both public APIs enforce it independently.
+    __CMS_PUBLIC_READS_ENABLED__: JSON.stringify(process.env.CMS_PUBLIC_READS_ENABLED === 'true')
   },
   server: { port: 5173 }
 }));

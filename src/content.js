@@ -1,10 +1,10 @@
 export const BRAND = {
   name: 'Inclusive Quest',
-  tagline: 'See Every Story. See Every Voice.',
+  tagline: '',
   logoSrc: '/inclusive-quest-logo.png',
   supportEmail: 'info@inclusivequest.co',
   contactEmail: 'info@inclusivequest.co',
-  footerTagline: 'Unveiling Access, One Quest at a Time.'
+  footerTagline: 'Unveiling Access. One Quest at a Time.'
 };
 
 // Submission forms are managed in the client's Tally workspace. Keep these URLs exact.
@@ -77,6 +77,7 @@ export const ABOUT = {
 };
 
 export const FOUNDER = {
+  heading: '',
   // Upload one image to public/founder-photo.jpg and both founder-photo placements update automatically.
   photoSrc: '/founder-photo.jpg',
   photoAlt: 'Inclusive Quest founder',
@@ -115,6 +116,8 @@ export const TITLES = [
     episodeTitle: 'Calling All Women in Business: How to Stop Overthinking and Start Taking Smarter Risks',
     category: 'Podcast',
     duration: 'Episode preview',
+    hostName: '',
+    comingSoon: true,
     badge: 'Sign Language + Captions',
     poster: '/she-wears-the-pants.svg',
     mainVideoSrc: null,
@@ -158,11 +161,6 @@ export const TESTIMONIALS = [
     "name": "Juliana Vadala",
     "title": "Certified ASL Interpreter",
     "quote": "As a professional ASL interpreter who enjoys discussing and sharing media with Deaf friends- the elephant in the room is that we can’t share podcasts or even discuss them because there is a glaring disparity- podcasts are inaccessible to Deaf individuals. While everyone has noticed this disparity no one has taken up the mantle to provide the Deaf community access to podcasts like Inclusive Quest.\n\n‘But podcasts have transcripts now- isn’t that enough?’ Simply put, it’s not enough. Deaf Americans’ primary language is American Sign Language not written English. To make podcasts accessible to the Deaf community, they need to be interpreted into ASL.\n\nAlma Beaty has identified this massive inequality and has worked tirelessly to bridge the gap. This is an important venture to include the Deaf community in the news, updates, conversations and entertainment the rest of the world enjoys via podcasts. Admirable and necessary, Inclusive Quest is making podcasts accessible one clip at a time."
-  },
-  {
-    "name": "Y.S.",
-    "title": "Law Student",
-    "quote": "I used to take podcasts for granted — commuting, cooking, relaxing. Then I learned that 1.5 billion Deaf and Hard of Hearing people are entirely cut off from that world. Inclusive Quest isn’t just a company. It’s a movement toward a future where no one is left unheard or unseen."
   }
 ];
 export const SOCIAL_LINKS = [];

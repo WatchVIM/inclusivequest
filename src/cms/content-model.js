@@ -3,6 +3,15 @@ import { createSponsorSlot, validateSponsorSlot, sponsorPublicationIssues } from
 import { isStoredImageSource } from './backend-config.js';
 
 export const SCHEMA_VERSION = 1;
+export const DEFAULT_POST_AUTHOR = 'Alma / Inclusive Quest';
+export const HOME_INTERPRETER_DEFAULTS = { interpreterImageSrc: '', interpreterImageAlt: '', interpreterTitle: '', interpreterSubtitle: '' };
+
+export function isValidPostDate(value) {
+  if (value === '') return true;
+  if (typeof value !== 'string' || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(value) || value.startsWith('0000')) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
 export const CONTENT_TYPES = ['page', 'post', 'founder', 'testimonial', 'episode', 'category', 'sponsor'];
 export const POST_TEMPLATES = {
   story: { label: 'Community story', body: 'The story\n\nWhy it matters\n\nWhat comes next' },
@@ -34,7 +43,7 @@ export function parseYouTubeUrl(value) {
 }
 
 export function isSafeImageUrl(value) {
-  if (typeof value !== 'string') return false;
+  if (typeof value !== 'string' || /[\\\u0000-\u001f]/.test(value)) return false;
   if (!value) return true;
   if (/^\/(?!\/)/.test(value)) return !/[\\\s\u0000-\u001f]/.test(value);
   try {
@@ -66,13 +75,20 @@ export function validateDocument(type, data) {
     text('title', 'Title', true, 160); slug();
     text('body', 'Body', true, 40000);
   }
-  if (type === 'page') { text('heading', 'Heading', true, 200); text('subtitle', 'Subtitle', false, 300); }
+  if (type === 'page') {
+    text('heading', 'Heading', true, 200); text('subtitle', 'Subtitle', false, 300);
+    text('interpreterTitle', 'Interpreter title', false, 160); text('interpreterSubtitle', 'Interpreter subtitle', false, 300);
+    text('interpreterImageSrc', 'Interpreter image', false, 2000); text('interpreterImageAlt', 'Interpreter image alternative text', Boolean(data.interpreterImageSrc), 500);
+    if (data.interpreterImageSrc && !isSafeImageUrl(data.interpreterImageSrc)) errors.interpreterImageSrc = 'Use a site-relative image path or an HTTPS image URL.';
+  }
   if (type === 'post') {
     text('excerpt', 'Summary', true, 500);
+    text('author', 'Author', false, 160); text('date', 'Post date', false, 10);
+    if (data.date != null && !isValidPostDate(data.date)) errors.date = 'Use a real calendar date in YYYY-MM-DD format, or leave blank.';
     if (!Object.hasOwn(POST_TEMPLATES, data.template)) errors.template = 'Choose a supported post template.';
   }
   if (type === 'founder') {
-    text('name', 'Name', true, 160); text('title', 'Role', true, 160);
+    text('name', 'Name', true, 160); text('title', 'Role', true, 160); text('heading', 'Founder heading', false, 200);
     text('bio', 'Biography', true, 20000); text('story', 'Founder story', true, 20000); text('homeQuote', 'Homepage quote', true, 1000);
   }
   if (type === 'testimonial') {
@@ -80,6 +96,8 @@ export function validateDocument(type, data) {
   }
   if (type === 'episode') {
     text('title', 'Show title', true, 160); text('episodeTitle', 'Episode title', true, 220);
+    text('hostName', 'Host name', false, 160);
+    if (Object.hasOwn(data, 'comingSoon') && typeof data.comingSoon !== 'boolean') errors.comingSoon = 'Coming soon must be on or off.';
     text('description', 'Description', true, 10000); text('category', 'Category', true, 100);
     text('youtubeUrl', 'YouTube URL', false, 2000);
     if (data.youtubeUrl && !parseYouTubeUrl(data.youtubeUrl)) errors.youtubeUrl = 'Enter a full HTTPS YouTube video link (watch, shorts, live, or youtu.be).';
@@ -100,7 +118,13 @@ export function validateDocument(type, data) {
 export function publicationIssues(type, data, records, id) {
   if (type === 'sponsor') return { ...validateDocument(type, data), ...sponsorPublicationIssues(data, records, id) };
   const errors = validateDocument(type, data);
-  if (type === 'episode' && !data.youtubeUrl && !(data.mainVideoSrc && data.aslVideoSrc)) errors.youtubeUrl = 'Add a YouTube video link or approved episode and interpreter media before publishing.';
+  if (type === 'episode') {
+    if (data.comingSoon === true) {
+      for (const field of ['youtubeUrl', 'mainVideoSrc', 'aslVideoSrc', 'captionsSrc']) {
+        if (data[field]) errors[field] = 'Remove media links before publishing a coming-soon episode. Coming-soon status hides playback, not media URLs.';
+      }
+    } else if (!data.youtubeUrl && !(data.mainVideoSrc && data.aslVideoSrc)) errors.youtubeUrl = 'Add a YouTube video link or approved episode and interpreter media, or mark the episode coming soon before publishing.';
+  }
   return errors;
 }
 
@@ -112,10 +136,10 @@ export function documentStatus(record) { return !record.published ? 'Draft only'
 
 export function createSeedDocuments() {
   const records = [
-    { id: 'page-home', type: 'page', data: { title: 'Home', slug: 'home', heading: 'Accessible Podcasts.', subtitle: 'See Every Story. See Every Voice.', body: 'Explore the podcast world through Sign Language interpretation, captions, transcripts, and topic-based discovery — with DHH audiences at the center.', imageSrc: '', imageAlt: '' } },
+    { id: 'page-home', type: 'page', data: { title: 'Home', slug: 'home', heading: 'Accessible Podcasts.', subtitle: '', ...HOME_INTERPRETER_DEFAULTS, body: 'Explore the podcast world through Sign Language interpretation, captions, transcripts, and topic-based discovery — with DHH audiences at the center.', imageSrc: '', imageAlt: '' } },
     { id: 'page-about', type: 'page', data: { title: 'About', slug: 'about', heading: ABOUT.heading, subtitle: '', body: ABOUT.paragraphs.join('\n\n'), imageSrc: '', imageAlt: '' } },
     ...MISSION_VISION_VALUES.map(item => ({ id: `page-${item.id}`, type: 'page', data: { title: item.heading, slug: item.id, heading: item.heading, subtitle: '', body: item.text, imageSrc: '', imageAlt: '' } })),
-    { id: 'founder-alma', type: 'founder', data: { name: FOUNDER.name, title: FOUNDER.title, bio: FOUNDER.bio.join('\n\n'), story: FOUNDER.story.join('\n\n'), homeQuote: FOUNDER.homeQuote, imageSrc: FOUNDER.photoSrc, imageAlt: FOUNDER.photoAlt } },
+    { id: 'founder-alma', type: 'founder', data: { name: FOUNDER.name, title: FOUNDER.title, heading: FOUNDER.heading, bio: FOUNDER.bio.join('\n\n'), story: FOUNDER.story.join('\n\n'), homeQuote: FOUNDER.homeQuote, imageSrc: FOUNDER.photoSrc, imageAlt: FOUNDER.photoAlt } },
     ...TESTIMONIALS.map((item, index) => ({ id: `testimonial-${index + 1}`, type: 'testimonial', data: item })),
     ...TITLES.map(item => ({ id: item.id, type: 'episode', data: { ...item, youtubeUrl: '', imageSrc: item.poster, imageAlt: `${item.title} podcast artwork`, tags: [] } })),
     { id: 'category-podcast', type: 'category', data: { name: 'Podcast', slug: 'podcast', description: 'Podcast conversations.' } }
@@ -128,10 +152,10 @@ export function createDraft(type, id, template = 'story') {
   const image = { imageSrc: '', imageAlt: '' };
   const defaults = {
     page: { title: '', slug: '', heading: '', subtitle: '', body: '', ...image },
-    post: { title: '', slug: '', excerpt: '', body: POST_TEMPLATES[template]?.body || POST_TEMPLATES.story.body, template: Object.hasOwn(POST_TEMPLATES, template) ? template : 'story', ...image },
-    founder: { name: '', title: '', bio: '', story: '', homeQuote: '', ...image },
+    post: { title: '', slug: '', excerpt: '', date: '', author: DEFAULT_POST_AUTHOR, body: POST_TEMPLATES[template]?.body || POST_TEMPLATES.story.body, template: Object.hasOwn(POST_TEMPLATES, template) ? template : 'story', ...image },
+    founder: { name: '', title: '', heading: '', bio: '', story: '', homeQuote: '', ...image },
     testimonial: { name: '', title: '', quote: '' },
-    episode: { title: '', episodeTitle: '', description: '', youtubeUrl: '', category: 'Podcast', tags: [], ...image, mainVideoSrc: null, aslVideoSrc: null, captionsSrc: null, duration: '', badge: '' },
+    episode: { title: '', episodeTitle: '', hostName: '', comingSoon: false, description: '', youtubeUrl: '', category: 'Podcast', tags: [], ...image, mainVideoSrc: null, aslVideoSrc: null, captionsSrc: null, duration: '', badge: '' },
     category: { name: '', slug: '', description: '' },
     sponsor: createSponsorSlot('home')
   };

@@ -7,7 +7,7 @@ import '../../../src/styles.css';
 
 const copy = value => structuredClone(value);
 const params = new URLSearchParams(location.search);
-let session = params.has('signed-out') ? null : { user: { id: 'fixture-editor', email: 'editor@example.test' }, role: params.get('role') || 'publisher' };
+let session = params.has('signed-out') ? null : { user: { id: 'fixture-editor', email: 'editor@example.test' }, role: params.get('role') || 'publisher', ...(params.has('password-setup') ? { requiresPasswordSetup: true } : {}) };
 let records = createSeedDocuments();
 let callback;
 const calls = [];
@@ -18,7 +18,17 @@ const repository = {
   configured: true,
   getSession: async () => session,
   onAuthStateChange: fn => { callback = fn; return () => { callback = null; }; },
-  requestSignIn: async email => { calls.push(['signIn', email]); },
+  requestSignIn: async (email, password) => {
+    calls.push(['signIn', email]); // Never record even fixture password values.
+    if (params.has('login-failure') || password !== 'fixture-password') throw new Error('Private provider details');
+    session = { user: { id: 'fixture-editor', email }, role: params.get('role') || 'publisher' };
+    callback?.();
+  },
+  completePasswordSetup: async (password, confirmation, expectedId) => {
+    if (!session?.requiresPasswordSetup || session.user.id !== expectedId || password !== confirmation || password.length < 12) throw new Error('Invalid fixture setup');
+    calls.push(['setup']); // Never record password values.
+    session = null; callback?.('SIGNED_OUT', null); return { requiresFreshSignIn: true };
+  },
   signOut: async () => { calls.push(['signOut']); session = null; callback?.(); },
   loadWorkspace: async () => ({ member: { role: session.role }, documents: copy(records) }),
   saveDraft: async (record, revision) => {

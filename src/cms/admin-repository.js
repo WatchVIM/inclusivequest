@@ -22,17 +22,41 @@ const disabledRepository = Object.freeze({
   configured: false,
   capabilities: Object.freeze({ signIn: false, saveDraft: false, publish: false, upload: false }),
   getSession: async () => null, onAuthStateChange: () => () => {},
-  requestSignIn: unavailable, signIn: unavailable, signOut: unavailable,
+  requestSignIn: unavailable, signIn: unavailable, signOut: unavailable, completePasswordSetup: unavailable,
   loadWorkspace: unavailable, initialize: unavailable, listDocuments: unavailable, saveDraft: unavailable,
   publish: unavailable, unpublish: unavailable, uploadImage: unavailable, upload: unavailable,
   listRevisions: unavailable, restoreRevision: unavailable, previewDocuments: unavailable
 });
 
-/** Admin-generated invitations use implicit callbacks; normal email sign-in uses PKCE.
+/** Owner-generated invite/recovery links can use implicit callbacks; PKCE codes remain SDK-managed.
  * The SDK, never this helper, consumes/verifies tokens and removes callback fragments. */
 export function authFlowForHash(hash = '') {
   const params = new URLSearchParams(hash.replace(/^#/, ''));
-  return params.get('type') === 'invite' && params.has('access_token') && params.has('refresh_token') ? 'implicit' : 'pkce';
+  return ['invite', 'recovery'].includes(params.get('type')) && params.has('access_token') && params.has('refresh_token') ? 'implicit' : 'pkce';
+}
+
+
+export function passwordSetupFeedback(password = '', confirmation = '') {
+  if (password.length < 12) return 'Use at least 12 characters. A long, unique passphrase is recommended.';
+  if (password.length > 128) return 'Use no more than 128 characters.';
+  if (password !== confirmation) return 'The passwords must match.';
+  return '';
+}
+function setupClaims(token) {
+  try {
+    const segment = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = segment.padEnd(Math.ceil(segment.length / 4) * 4, '=');
+    const claims = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(padded), char => char.charCodeAt(0))));
+    return { subject: claims.sub, setup: Array.isArray(claims.amr) && claims.amr.some(item => ['invite', 'recovery'].includes(item?.method)) };
+  } catch { return { subject: null, setup: false }; }
+}
+function clearAuthCallbackUrl() {
+  if (typeof window === 'undefined' || !window.history) return;
+  const url = new URL(window.location.href);
+  const fragment = new URLSearchParams(url.hash.slice(1));
+  if (['access_token', 'refresh_token', 'error', 'error_code', 'error_description'].some(key => fragment.has(key))) url.hash = '';
+  for (const key of ['code', 'access_token', 'refresh_token', 'error', 'error_code', 'error_description']) url.searchParams.delete(key);
+  window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
 }
 
 /** SDK injection makes transport tests independent of live credentials. */
@@ -45,35 +69,60 @@ export function createAdminRepository({ config, client, create = createClient, c
   const pendingOperations = new Map();
   let identity = null;
   let initializationChecked = false;
+  let setupHint = authFlowForHash(callbackHash) === 'implicit';
+  let setupUser = null;
+  let setupInFlight = false;
+  let setupCompleted = false;
+  let sessionGeneration = 0;
+  let invalidCallback = false;
   const rpc = async (name, args) => {
     const { data, error } = await db.rpc(name, args);
     if (error) throw backendError(error);
     return data;
   };
   const getSession = async () => {
+    if (invalidCallback) throw Object.assign(new Error('This setup link is invalid or expired. Ask the site owner for a new secure link.'), { code: 'SESSION_EXPIRED' });
     if (!initializationChecked && db.auth.initialize) {
       initializationChecked = true;
-      const { error } = await db.auth.initialize();
+      let error;
+      const hadCode = typeof window !== 'undefined' && new URL(window.location.href).searchParams.has('code');
+      try {
+        ({ error } = await db.auth.initialize());
+        if (hadCode && new URL(window.location.href).searchParams.has('code')) error = true;
+      } catch { error = true; }
+      finally { clearAuthCallbackUrl(); }
       if (error) {
-        const invalid = new Error('The sign-in link is invalid or expired. Request a fresh link and open it in the same browser.');
-        invalid.code = 'SESSION_EXPIRED'; throw invalid;
+        invalidCallback = true;
+        throw Object.assign(new Error('This setup link is invalid or expired. Ask the site owner for a new secure link.'), { code: 'SESSION_EXPIRED' });
       }
     }
-    // Verify with Auth, then check live database membership, never user_metadata.
-    const { data, error } = await db.auth.getUser();
+    // Verify the actual SDK token with Auth before using its AMR for UI routing.
+    // This is not a substitute for a server-side password-method authorization rule.
+    let authSession = null;
+    if (db.auth.getSession) {
+      const result = await db.auth.getSession();
+      if (result.error) throw backendError({ code: 'PT401' });
+      authSession = result.data?.session;
+    }
+    const { data, error } = await db.auth.getUser(authSession?.access_token);
     if (error || !data?.user) {
       if (!error || error.name === 'AuthSessionMissingError' || error.status === 401 || error.status === 403) { identity = null; return null; }
-      throw backendError(error);
+      throw backendError({ code: 'PT401' });
     }
+    const claims = authSession?.access_token ? setupClaims(authSession.access_token) : null;
+    if (claims && claims.subject !== data.user.id) throw backendError({ code: 'PT401' });
+    if (setupHint || claims?.setup) setupUser = data.user.id;
+    setupHint = false;
     const member = await rpc('cms_session');
     if (!member || !['editor', 'publisher'].includes(member.role)) throw backendError({ code: 'PT403' });
     if (identity !== data.user.id) pendingOperations.clear();
     identity = data.user.id;
-    return { user: { id: data.user.id, email: data.user.email }, role: member.role };
+    return { user: { id: data.user.id, email: data.user.email }, role: member.role, ...(setupUser === data.user.id || setupCompleted ? { requiresPasswordSetup: true } : {}) };
   };
   const requireSession = async () => {
     const session = await getSession();
     if (!session) throw backendError({ code: 'PT401' });
+    if (session.requiresPasswordSetup) throw Object.assign(new Error('Finish password setup and sign in again before opening the workspace.'), { code: 'PASSWORD_SETUP_REQUIRED' });
     return session;
   };
   const checkedDocument = value => {
@@ -110,22 +159,68 @@ export function createAdminRepository({ config, client, create = createClient, c
     getSession,
     onAuthStateChange(callback) {
       const { data } = db.auth.onAuthStateChange((event, session) => {
-        if (event === 'SIGNED_OUT') { identity = null; pendingOperations.clear(); }
+        if (['SIGNED_IN', 'SIGNED_OUT', 'PASSWORD_RECOVERY'].includes(event)) sessionGeneration += 1;
+        if (event === 'PASSWORD_RECOVERY') setupUser = session?.user?.id || null;
+        if (event === 'SIGNED_OUT') { identity = null; setupUser = null; setupHint = false; pendingOperations.clear(); }
         queueMicrotask(() => callback(event, session));
       });
       return () => data.subscription.unsubscribe();
     },
-    async requestSignIn(email) {
-      if (typeof email !== 'string' || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) throw new Error('Enter your invited email address.');
-      const callback = new URL('/admin', origin);
-      if (callback.protocol !== 'https:' && !['localhost', '127.0.0.1'].includes(callback.hostname)) throw new Error('Secure sign-in requires HTTPS.');
-      const { error } = await db.auth.signInWithOtp({ email: email.trim(), options: { shouldCreateUser: false, emailRedirectTo: callback.href } });
-      if (error) throw backendError(error);
+    async requestSignIn(email, password) {
+      const failure = () => new Error('Unable to sign in. Check your email and password, or contact the site owner.');
+      if (typeof email !== 'string' || email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) || typeof password !== 'string' || !password) throw failure();
+      const callback = new URL('/admin', origin || 'http://localhost');
+      if (callback.protocol !== 'https:' && !['localhost', '127.0.0.1'].includes(callback.hostname)) throw failure();
+      let authenticated = false;
+      try {
+        const { error } = await db.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
+        if (error) throw failure();
+        authenticated = true; setupCompleted = false; invalidCallback = false; setupUser = null; setupHint = false;
+        const session = await getSession();
+        if (!session) throw failure();
+        return session;
+      } catch {
+        if (authenticated) {
+          try { await db.auth.signOut({ scope: 'local' }); } catch { /* No credentials or Auth errors are logged. */ }
+          identity = null; pendingOperations.clear();
+        }
+        throw failure();
+      }
+    },
+    async completePasswordSetup(password, confirmation, expectedUserId) {
+      const failure = () => new Error('Could not confirm your password setup. Try again, or ask the site owner for a new secure link.');
+      if (setupInFlight || setupCompleted || passwordSetupFeedback(password, confirmation)) throw failure();
+      const callback = new URL('/admin', origin || 'http://localhost');
+      if (callback.protocol !== 'https:' && !['localhost', '127.0.0.1'].includes(callback.hostname)) throw failure();
+      setupInFlight = true;
+      const generation = sessionGeneration;
+      try {
+        const session = await getSession();
+        if (!session?.requiresPasswordSetup || session.user.id !== expectedUserId || generation !== sessionGeneration) throw failure();
+        // Recheck immediately before the explicit user-submitted credential update.
+        const { data, error } = await db.auth.getUser();
+        if (error || data?.user?.id !== expectedUserId || generation !== sessionGeneration) throw failure();
+        const updated = await db.auth.updateUser({ password });
+        if (updated.error) throw failure();
+        setupCompleted = true; // Fail closed even if logout is interrupted.
+        try {
+          if (updated.data?.user?.id !== expectedUserId || generation !== sessionGeneration) throw new Error('Session changed');
+          const signedOut = await db.auth.signOut({ scope: 'local' });
+          if (signedOut.error) throw new Error('Sign-out unconfirmed');
+        } catch {
+          throw Object.assign(new Error('Your password was saved, but sign-out could not be confirmed. Use Sign out before signing in again.'), { code: 'PASSWORD_SAVED_SIGNOUT_REQUIRED' });
+        }
+        identity = null; setupUser = null; setupHint = false; pendingOperations.clear();
+        return { requiresFreshSignIn: true };
+      } catch (error) {
+        if (error?.code === 'PASSWORD_SAVED_SIGNOUT_REQUIRED') throw error;
+        throw failure();
+      } finally { setupInFlight = false; }
     },
     async signOut() {
       const { error } = await db.auth.signOut({ scope: 'local' });
       if (error) throw backendError(error);
-      identity = null; pendingOperations.clear();
+      identity = null; setupUser = null; setupHint = false; pendingOperations.clear();
     },
     async loadWorkspace() { const session = await requireSession(); return { member: { role: session.role }, documents: await listDocuments() }; },
     listDocuments,
@@ -170,14 +265,16 @@ export function createAdminRepository({ config, client, create = createClient, c
       for (const record of result) {
         const source = mode === 'published' ? record.published : record.draft;
         if (!source) continue;
-        const path = imagePathFromSource(source.imageSrc);
-        if (path) {
-          if (!signed.has(path)) {
-            const { data, error } = await db.storage.from(IMAGE_BUCKET).createSignedUrl(path, 300);
-            if (error) throw backendError(error);
-            signed.set(path, data.signedUrl);
+        for (const field of ['imageSrc', 'interpreterImageSrc']) {
+          const path = imagePathFromSource(source[field]);
+          if (path) {
+            if (!signed.has(path)) {
+              const { data, error } = await db.storage.from(IMAGE_BUCKET).createSignedUrl(path, 300);
+              if (error) throw backendError(error);
+              signed.set(path, data.signedUrl);
+            }
+            source[field] = signed.get(path);
           }
-          source.imageSrc = signed.get(path);
         }
         if (mode === 'published') record.draft = source;
       }
